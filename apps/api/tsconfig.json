@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node"],
+    "lib": ["ES2022"],
+    "paths": {
+      "@kelvyntube/shared": ["../../packages/shared/src/index.ts"],
+      "@kelvyntube/db": ["../../packages/db/src/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"]
+}

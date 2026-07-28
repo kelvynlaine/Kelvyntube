@@ -1,0 +1,39 @@
+{
+  "name": "kelvyn-tube",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Kelvyn Tube — plateforme de partage de vidéos (clone YouTube) full-stack",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "infra:up": "docker compose -f infra/docker-compose.yml up -d",
+    "infra:down": "docker compose -f infra/docker-compose.yml down",
+    "infra:logs": "docker compose -f infra/docker-compose.yml logs -f",
+    "db:generate": "npm run generate -w @kelvyntube/db",
+    "db:push": "npm run push -w @kelvyntube/db",
+    "db:migrate": "npm run migrate -w @kelvyntube/db",
+    "db:seed": "npm run seed -w @kelvyntube/db",
+    "db:studio": "npm run studio -w @kelvyntube/db",
+    "search:reindex": "npm run search:reindex -w @kelvyntube/api",
+    "dev:api": "npm run dev -w @kelvyntube/api",
+    "dev:worker": "npm run dev:worker -w @kelvyntube/api",
+    "dev:web": "npm run dev -w @kelvyntube/web",
+    "dev": "node scripts/dev.mjs",
+    "build": "npm run build -w @kelvyntube/shared && npm run build -w @kelvyntube/db && npm run build -w @kelvyntube/api && npm run build -w @kelvyntube/web",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "setup": "npm install && npm run infra:up && npm run db:generate && npm run db:push && npm run media:seed && npm run db:seed && npm run search:reindex",
+    "media:seed": "npm run media:seed -w @kelvyntube/api"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "concurrently": "^9.1.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}

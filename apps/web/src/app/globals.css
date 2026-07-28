@@ -1,0 +1,81 @@
+@import '@kelvyntube/ui/styles.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-bg text-fg font-sans text-kt-base;
+  }
+
+  /* Le lecteur en mode théâtre / plein écran bloque le scroll */
+  body[data-lock-scroll='true'] {
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  /*
+   * Anneau de focus accessible.
+   * `.kt-focus-ring` existe aussi en CSS brut dans `@kelvyntube/ui/styles.css`
+   * pour les composants qui l'appliquent via `className`. Ici on redéclare les
+   * mêmes styles sous forme de variantes Tailwind, car `@apply` ne sait pas
+   * appliquer une classe définie hors des couches Tailwind.
+   */
+  .kt-focusable {
+    @apply focus-visible:outline-none focus-visible:ring-2
+           focus-visible:ring-accent-fg focus-visible:ring-offset-2
+           focus-visible:ring-offset-bg;
+  }
+
+  /* Grille de vidéos responsive : 1 → 6 colonnes */
+  .kt-video-grid {
+    @apply grid gap-x-4 gap-y-8 grid-cols-1
+           feed-2:grid-cols-2 feed-3:grid-cols-3 feed-4:grid-cols-4
+           feed-5:grid-cols-5 feed-6:grid-cols-6;
+  }
+
+  /* Chip de filtre horizontal (Tout / Musique / Gaming…) */
+  .kt-chip {
+    @apply shrink-0 whitespace-nowrap rounded-pill px-3 py-[6px] text-kt-base font-medium
+           bg-bg-elevated text-fg transition-colors duration-150
+           hover:bg-bg-active focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-fg focus-visible:ring-offset-2 focus-visible:ring-offset-bg;
+  }
+
+  .kt-chip-active {
+    @apply bg-fg text-fg-inverse hover:bg-fg;
+  }
+
+  /* Bouton primaire (S'abonner) */
+  .kt-btn-primary {
+    @apply inline-flex items-center gap-2 rounded-pill bg-fg px-4 py-[9px]
+           text-kt-base font-medium text-fg-inverse transition-opacity
+           hover:opacity-90 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-fg focus-visible:ring-offset-2 focus-visible:ring-offset-bg;
+  }
+
+  .kt-btn-secondary {
+    @apply inline-flex items-center gap-2 rounded-pill bg-bg-elevated px-4 py-[9px]
+           text-kt-base font-medium text-fg transition-colors
+           hover:bg-bg-active disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-fg focus-visible:ring-offset-2 focus-visible:ring-offset-bg;
+  }
+
+  .kt-btn-ghost {
+    @apply inline-flex items-center justify-center rounded-full p-2
+           text-fg transition-colors hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-fg focus-visible:ring-offset-2 focus-visible:ring-offset-bg;
+  }
+
+  /* Élément de la sidebar */
+  .kt-sidebar-item {
+    @apply flex items-center gap-6 rounded-kt px-3 py-2 text-kt-base
+           text-fg transition-colors hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-fg focus-visible:ring-offset-2 focus-visible:ring-offset-bg;
+  }
+
+  .kt-sidebar-item-active {
+    @apply bg-bg-hover font-medium;
+  }
+}

@@ -1,0 +1,25 @@
+node_modules/
+dist/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+
+.env
+.env.local
+.env.*.local
+
+# Médias locaux (uploads / transcodage)
+storage/
+tmp/
+uploads/
+*.log
+
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Prisma
+packages/db/prisma/migrations/dev.db*
