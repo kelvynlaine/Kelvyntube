@@ -1,16 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  BarChart3,
-  ExternalLink,
-  ImageUp,
-  Plus,
-  Share2,
-  Trash2,
-} from 'lucide-react';
+import { BarChart3, ExternalLink, Plus, Share2, Trash2 } from 'lucide-react';
 import {
   ROUTES,
   updateVideoSchema,
@@ -35,6 +28,7 @@ import {
 import { api } from '@/lib/api';
 import { PATHS } from '@/lib/nav';
 import { Panel } from './Panel';
+import { TOUCH_FIELD } from './bits';
 import { RangeSelect } from './RangeSelect';
 import { BreakdownBars, MetricAreaChart, RetentionChart } from './charts';
 import { useChartTheme } from './charts/chart-theme';
@@ -111,10 +105,14 @@ export function VideoEditScreen() {
         </div>
         <Button
           variant="secondary"
+          className="h-11 shrink-0 feed-3:h-9"
           iconLeft={<ExternalLink size={16} />}
           onClick={() => window.open(PATHS.watch(video.id), '_blank', 'noopener')}
         >
-          Voir sur Kelvyn Tube
+          {/* Le libellé complet est superflu sur 320 px : « Voir » suffit,
+              l'icône « lien externe » porte déjà le sens. */}
+          <span className="xs:hidden">Voir</span>
+          <span className="hidden xs:inline">Voir sur Kelvyn Tube</span>
         </Button>
       </header>
 
@@ -167,7 +165,6 @@ function DetailsForm({
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const thumbInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState(video.title);
   const [description, setDescription] = useState(video.description ?? '');
@@ -176,6 +173,20 @@ function DetailsForm({
   const [visibility, setVisibility] = useState<VideoVisibility>(video.visibility);
   const [publishAt, setPublishAt] = useState(toDateTimeLocalValue(video.publishAt));
   const [thumbnail, setThumbnail] = useState<string | undefined>(video.thumbnailUrl ?? undefined);
+  /**
+   * Miniature réellement importée (distincte de `thumbnail`, qui suit juste
+   * la sélection courante). Si on passait `thumbnail` comme `customUrl` du
+   * `ThumbnailPicker`, une miniature actuelle qui est déjà l'une des 3
+   * propositions auto-générées se retrouverait dupliquée dans la grille avec
+   * un badge « Perso » erroné. On ne restaure ce statut au chargement que si
+   * la miniature enregistrée n'est PAS l'une des candidates auto-générées —
+   * c'est alors forcément un import précédent.
+   */
+  const [customThumbnail, setCustomThumbnail] = useState<string | undefined>(
+    video.thumbnailUrl && !video.thumbnailCandidates.includes(video.thumbnailUrl)
+      ? video.thumbnailUrl
+      : undefined,
+  );
   const [commentsEnabled, setCommentsEnabled] = useState(video.commentsEnabled);
   const [madeForKids, setMadeForKids] = useState(video.madeForKids ?? false);
   const [ageRestricted, setAgeRestricted] = useState(video.ageRestricted ?? false);
@@ -265,6 +276,7 @@ function DetailsForm({
     },
     onSuccess: (result) => {
       setThumbnail(result.thumbnailUrl);
+      setCustomThumbnail(result.thumbnailUrl);
       toast({ message: 'Miniature mise à jour', variant: 'success' });
     },
     onError: () => toast({ message: 'Envoi de la miniature impossible', variant: 'error' }),
@@ -278,18 +290,32 @@ function DetailsForm({
           className="flex flex-wrap items-center justify-between gap-3 rounded-kt border border-warning/40 bg-warning/10 px-4 py-2 text-kt-base"
         >
           <span>Modifications non enregistrées</span>
-          <Button size="sm" loading={save.isPending} onClick={() => save.mutate()}>
+          <Button
+            size="sm"
+            className="h-11 feed-3:h-8"
+            loading={save.isPending}
+            onClick={() => save.mutate()}
+          >
             Enregistrer
           </Button>
         </div>
       )}
 
-      <div className="grid gap-4 feed-3:grid-cols-[1fr_360px]">
+      {/*
+        En mobile, la colonne latérale passe EN PREMIER (`order-first`) :
+        miniature et visibilité sont les deux décisions que l'on vient prendre
+        le plus souvent, il serait absurde de les reléguer après une
+        description de 8 lignes, trois cases à cocher et la liste des
+        chapitres. En desktop, l'ordre visuel d'origine est rétabli.
+        `minmax(0,1fr)` : sans lui, la colonne formulaire refuse de rétrécir.
+      */}
+      <div className="grid gap-4 feed-3:grid-cols-[minmax(0,1fr)_360px]">
         {/* ── Colonne formulaire ──────────────────────────────────────── */}
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4 feed-3:order-first">
           <Panel title="Informations">
             <div className="flex flex-col gap-4">
               <Input
+                className={TOUCH_FIELD}
                 label="Titre (obligatoire)"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -309,6 +335,7 @@ function DetailsForm({
                 error={errors.description}
               />
               <Select
+                className={TOUCH_FIELD}
                 label="Catégorie"
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
@@ -325,6 +352,7 @@ function DetailsForm({
               <Button
                 variant="secondary"
                 size="sm"
+                className="h-11 feed-3:h-8"
                 iconLeft={<Plus size={15} />}
                 onClick={() => setChapters([...chapters, { startSec: 0, title: '' }])}
               >
@@ -339,7 +367,13 @@ function DetailsForm({
             ) : (
               <ul className="flex flex-col gap-2">
                 {chapters.map((chapter, index) => (
-                  <li key={index} className="flex items-end gap-2">
+                  // Grille plutôt que `flex` : à 320 px, `w-28 + flex-1 + bouton`
+                  // écrasait le champ de titre à une trentaine de pixels.
+                  // `minmax(0,1fr)` garantit que c'est bien le titre qui cède.
+                  <li
+                    key={index}
+                    className="grid grid-cols-[5.5rem_minmax(0,1fr)_auto] items-end gap-2"
+                  >
                     <Input
                       aria-label={`Début du chapitre ${index + 1}`}
                       value={formatClock(chapter.startSec)}
@@ -353,10 +387,12 @@ function DetailsForm({
                           );
                         }
                       }}
-                      containerClassName="w-28"
+                      className={`${TOUCH_FIELD} px-2 tabular-nums`}
+                      containerClassName="min-w-0"
                     />
                     <Input
                       aria-label={`Titre du chapitre ${index + 1}`}
+                      className={TOUCH_FIELD}
                       value={chapter.title}
                       maxLength={100}
                       onChange={(e) =>
@@ -366,10 +402,11 @@ function DetailsForm({
                           ),
                         )
                       }
-                      containerClassName="flex-1"
+                      containerClassName="min-w-0"
                     />
                     <IconButton
                       aria-label={`Supprimer le chapitre ${index + 1}`}
+                      className="size-11 feed-3:size-10"
                       onClick={() => setChapters(chapters.filter((_, i) => i !== index))}
                     >
                       <Trash2 size={17} />
@@ -403,60 +440,36 @@ function DetailsForm({
         </div>
 
         {/* ── Colonne latérale ────────────────────────────────────────── */}
-        <div className="flex flex-col gap-4">
+        <div className="order-first flex min-w-0 flex-col gap-4 feed-3:order-none">
           <Panel title="Miniature">
-            {video.thumbnailCandidates?.length ? (
-              <ThumbnailPicker
-                options={video.thumbnailCandidates}
-                value={thumbnail}
-                onChange={setThumbnail}
-                customUrl={thumbnail}
-                onCustomFile={(file) => uploadThumbnail.mutate(file)}
-                uploading={uploadThumbnail.isPending}
-              />
-            ) : (
-              <div className="flex flex-col gap-3">
-                <div className="aspect-video overflow-hidden rounded-kt bg-bg-hover">
-                  {thumbnail ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={thumbnail} alt="" className="size-full object-cover" />
-                  ) : null}
-                </div>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  iconLeft={<ImageUp size={15} />}
-                  loading={uploadThumbnail.isPending}
-                  onClick={() => thumbInputRef.current?.click()}
-                >
-                  Importer une miniature
-                </Button>
-                <input
-                  ref={thumbInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="sr-only"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) uploadThumbnail.mutate(file);
-                  }}
-                />
-              </div>
-            )}
+            <ThumbnailPicker
+              options={video.thumbnailCandidates}
+              value={thumbnail}
+              onChange={setThumbnail}
+              customUrl={customThumbnail}
+              onCustomFile={(file) => uploadThumbnail.mutate(file)}
+              uploading={uploadThumbnail.isPending}
+            />
           </Panel>
 
           <Panel title="Visibilité">
             <fieldset className="flex flex-col gap-2">
               <legend className="sr-only">Visibilité de la vidéo</legend>
               {VISIBILITIES.map((v) => (
-                <label key={v} className="flex cursor-pointer items-start gap-2">
+                // `min-h-11` : le bouton radio natif fait 16 px ; c'est le
+                // libellé entier qui sert de cible tactile, on lui donne donc
+                // une hauteur de 44 px.
+                <label
+                  key={v}
+                  className="flex min-h-11 cursor-pointer items-center gap-3 rounded-kt feed-3:min-h-0 feed-3:items-start"
+                >
                   <input
                     type="radio"
                     name="visibility"
                     value={v}
                     checked={visibility === v}
                     onChange={() => setVisibility(v)}
-                    className="mt-1 accent-[color:rgb(var(--kt-accent-fg))]"
+                    className="size-4 shrink-0 accent-[color:rgb(var(--kt-accent-fg))] feed-3:mt-1"
                   />
                   <span className="text-kt-base">{VISIBILITY_LABELS[v]}</span>
                 </label>
@@ -464,6 +477,7 @@ function DetailsForm({
             </fieldset>
             {visibility === 'SCHEDULED' && (
               <Input
+                className={TOUCH_FIELD}
                 type="datetime-local"
                 label="Date de publication"
                 value={publishAt}
@@ -477,13 +491,15 @@ function DetailsForm({
           <Panel title="Lien de partage">
             <div className="flex items-center gap-2">
               <Input
+                className={TOUCH_FIELD}
                 readOnly
                 aria-label="Lien de la vidéo"
                 value={`${typeof window !== 'undefined' ? window.location.origin : ''}${PATHS.watch(video.id)}`}
-                containerClassName="flex-1"
+                containerClassName="min-w-0 flex-1"
               />
               <IconButton
                 aria-label="Copier le lien"
+                className="size-11 feed-3:size-10"
                 onClick={() => {
                   void navigator.clipboard.writeText(
                     `${window.location.origin}${PATHS.watch(video.id)}`,
@@ -498,11 +514,21 @@ function DetailsForm({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
-        <Link href={PATHS.studioVideos(channelId)} className="kt-btn-secondary">
+      {/* Actions finales : empilées et pleine largeur au pouce, alignées à
+          droite dès qu'il y a de la place. */}
+      <div className="flex flex-col-reverse gap-2 xs:flex-row xs:justify-end">
+        <Link
+          href={PATHS.studioVideos(channelId)}
+          className="kt-btn-secondary min-h-11 justify-center xs:min-h-0"
+        >
           Retour au contenu
         </Link>
-        <Button loading={save.isPending} disabled={!dirty} onClick={() => save.mutate()}>
+        <Button
+          className="h-11 xs:h-9"
+          loading={save.isPending}
+          disabled={!dirty}
+          onClick={() => save.mutate()}
+        >
           Enregistrer
         </Button>
       </div>
@@ -539,7 +565,7 @@ function VideoAnalyticsPanel({
   if (query.isLoading) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="grid grid-cols-2 gap-3 feed-3:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 feed-3:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} variant="rect" className="h-28 w-full rounded-kt" />
           ))}
@@ -569,7 +595,7 @@ function VideoAnalyticsPanel({
         <RangeSelect value={preset} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3 feed-3:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 feed-3:grid-cols-4">
         <StatCard label="Vues" value={formatNumber(totals.views)} />
         <StatCard label="Temps de visionnage" value={formatHours(totals.watchTimeHours)} />
         <StatCard

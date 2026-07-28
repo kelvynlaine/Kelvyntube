@@ -8,7 +8,7 @@ import {
   type CategoryDTO,
   type VideoVisibility,
 } from '@kelvyntube/shared';
-import { Button, DropdownMenu, Modal, Select, useToast } from '@kelvyntube/ui';
+import { Button, DropdownMenu, Modal, Select, cn, useToast } from '@kelvyntube/ui';
 import { api } from '@/lib/api';
 import { TagInput } from './TagInput';
 import {
@@ -25,6 +25,9 @@ import {
  *  appliquée vidéo par vidéo (l'API n'expose pas de suppression en lot).
  * ═══════════════════════════════════════════════════════════════════════════
  */
+
+/** 44 px au doigt, 32 px à la souris (à partir de feed-3, comme l'écran Contenu). */
+const BULK_CONTROL_HEIGHT = 'h-11 shrink-0 text-kt-base feed-3:h-8 feed-3:text-kt-sm';
 
 export interface BulkActionBarProps {
   selectedIds: string[];
@@ -102,98 +105,123 @@ export function BulkActionBar({ selectedIds, onClear, onDone }: BulkActionBarPro
 
   return (
     <>
+      {/*
+        ── Barre d'actions groupées ─────────────────────────────────────
+        Mobile : barre FIXE ancrée en bas de l'écran (au-dessus de la
+        safe-area de l'iPhone), pleine largeur, avec une rangée d'actions
+        défilable horizontalement — la pilule centrée d'origine se disloquait
+        sur cinq lignes à 390 px et poussait la page vers le bas.
+        Desktop (feed-3) : on retrouve exactement la pilule collante.
+      */}
       <div
         role="region"
         aria-label="Actions groupées"
-        className="sticky bottom-4 z-20 mx-auto flex w-fit max-w-full flex-wrap items-center gap-2 rounded-pill border border-border bg-bg-elevated px-3 py-2 shadow-xl"
+        className={cn(
+          'fixed inset-x-0 bottom-0 z-30 flex flex-col gap-2 border-t border-border bg-bg-elevated',
+          'px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-xl',
+          'feed-3:sticky feed-3:inset-x-auto feed-3:bottom-4 feed-3:mx-auto feed-3:w-fit feed-3:max-w-full',
+          'feed-3:flex-row feed-3:flex-wrap feed-3:items-center feed-3:rounded-pill feed-3:border',
+          'feed-3:px-3 feed-3:py-2',
+        )}
       >
         <span className="px-1 text-kt-sm font-medium text-fg">
           {count} sélectionnée{count > 1 ? 's' : ''}
         </span>
 
-        <Select
-          selectSize="sm"
-          aria-label="Changer la visibilité des vidéos sélectionnées"
-          placeholder="Visibilité"
-          value=""
-          disabled={busy}
-          onChange={(event) =>
-            bulkMutation.mutate({ visibility: event.target.value as VideoVisibility })
-          }
-          options={(['PUBLIC', 'UNLISTED', 'PRIVATE'] as const).map((value) => ({
-            value,
-            label: VISIBILITY_LABELS[value],
-          }))}
-          containerClassName="w-40"
-        />
+        {/*
+          `overflow-x-auto` + `flex-nowrap` : les actions restent sur une
+          seule rangée que l'on fait défiler du pouce, plutôt que d'empiler
+          six boutons et de manger la moitié de l'écran.
+        */}
+        <div className="kt-no-scrollbar -mx-1 flex flex-nowrap items-center gap-2 overflow-x-auto px-1 pb-0.5 feed-3:mx-0 feed-3:flex-wrap feed-3:overflow-visible feed-3:px-0 feed-3:pb-0">
+          <Select
+            selectSize="sm"
+            aria-label="Changer la visibilité des vidéos sélectionnées"
+            placeholder="Visibilité"
+            value=""
+            disabled={busy}
+            onChange={(event) =>
+              bulkMutation.mutate({ visibility: event.target.value as VideoVisibility })
+            }
+            options={(['PUBLIC', 'UNLISTED', 'PRIVATE'] as const).map((value) => ({
+              value,
+              label: VISIBILITY_LABELS[value],
+            }))}
+            className={BULK_CONTROL_HEIGHT}
+            containerClassName="w-36 shrink-0 feed-3:w-40"
+          />
 
-        <Button
-          size="sm"
-          variant="ghost"
-          iconLeft={<Tag size={16} />}
-          disabled={busy}
-          onClick={() => setCategoryOpen(true)}
-        >
-          Catégorie
-        </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            iconLeft={<Tag size={16} />}
+            disabled={busy}
+            className={BULK_CONTROL_HEIGHT}
+            onClick={() => setCategoryOpen(true)}
+          >
+            Catégorie
+          </Button>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          iconLeft={<Hash size={16} />}
-          disabled={busy}
-          onClick={() => setTagsOpen(true)}
-        >
-          Tags
-        </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            iconLeft={<Hash size={16} />}
+            disabled={busy}
+            className={BULK_CONTROL_HEIGHT}
+            onClick={() => setTagsOpen(true)}
+          >
+            Tags
+          </Button>
 
-        <DropdownMenu
-          side="top"
-          align="end"
-          label="Commentaires"
-          disabled={busy}
-          triggerLabel="Activer ou désactiver les commentaires"
-          triggerClassName="h-8 gap-2 rounded-pill px-3 text-kt-sm text-fg hover:bg-bg-hover"
-          trigger={
-            <span className="inline-flex items-center gap-2">
-              <MessageSquare size={16} aria-hidden="true" />
-              Commentaires
-            </span>
-          }
-          items={[
-            {
-              id: 'on',
-              label: 'Activer les commentaires',
-              onSelect: () => bulkMutation.mutate({ commentsEnabled: true }),
-            },
-            {
-              id: 'off',
-              label: 'Désactiver les commentaires',
-              onSelect: () => bulkMutation.mutate({ commentsEnabled: false }),
-            },
-          ]}
-        />
+          <DropdownMenu
+            side="top"
+            align="end"
+            label="Commentaires"
+            disabled={busy}
+            triggerLabel="Activer ou désactiver les commentaires"
+            triggerClassName="h-11 shrink-0 gap-2 rounded-pill px-3 text-kt-base text-fg hover:bg-bg-hover feed-3:h-8 feed-3:text-kt-sm"
+            trigger={
+              <span className="inline-flex items-center gap-2">
+                <MessageSquare size={16} aria-hidden="true" />
+                Commentaires
+              </span>
+            }
+            items={[
+              {
+                id: 'on',
+                label: 'Activer les commentaires',
+                onSelect: () => bulkMutation.mutate({ commentsEnabled: true }),
+              },
+              {
+                id: 'off',
+                label: 'Désactiver les commentaires',
+                onSelect: () => bulkMutation.mutate({ commentsEnabled: false }),
+              },
+            ]}
+          />
 
-        <Button
-          size="sm"
-          variant="ghost"
-          iconLeft={<Trash2 size={16} />}
-          disabled={busy}
-          className="text-danger"
-          onClick={() => setDeleteOpen(true)}
-        >
-          Supprimer
-        </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            iconLeft={<Trash2 size={16} />}
+            disabled={busy}
+            className={cn(BULK_CONTROL_HEIGHT, 'text-danger')}
+            onClick={() => setDeleteOpen(true)}
+          >
+            Supprimer
+          </Button>
 
-        <Button
-          size="sm"
-          variant="ghost"
-          iconLeft={<X size={16} />}
-          disabled={busy}
-          onClick={onClear}
-        >
-          Désélectionner
-        </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            iconLeft={<X size={16} />}
+            disabled={busy}
+            className={BULK_CONTROL_HEIGHT}
+            onClick={onClear}
+          >
+            Désélectionner
+          </Button>
+        </div>
       </div>
 
       {/* ── Catégorie ──────────────────────────────────────────────────── */}

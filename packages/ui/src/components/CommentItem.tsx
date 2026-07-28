@@ -162,7 +162,14 @@ export function CommentItem({
         </p>
       ) : null}
 
-      <div className="flex gap-3">
+      {/*
+        Indentation : chaque niveau coûte « largeur d'avatar + gouttière ».
+        Sous 480 px on descend la gouttière à 8 px, ce qui ramène le retrait
+        d'une réponse à 40 px au lieu de 52 — sur un écran de 360 px c'est la
+        différence entre une colonne de texte confortable et une colonne
+        étranglée. Le rendu ≥ 480 px (gap-3) est inchangé.
+      */}
+      <div className="flex gap-2 xs:gap-3">
         <div className="relative shrink-0">
           {authorHref ? (
             <Link
@@ -229,17 +236,23 @@ export function CommentItem({
             onTimestampClick={onTimestampClick}
             onMentionClick={onMentionClick}
             onHashtagClick={onHashtagClick}
-            className="text-kt-base text-fg"
+            // `break-words` : une URL collée dans un commentaire fait sinon
+            // déborder toute la colonne sur téléphone.
+            className="break-words text-kt-base text-fg"
           />
 
-          {/* Actions */}
+          {/*
+            Actions : `flex-wrap` est essentiel une fois les cibles portées à
+            44 px au doigt — like, dislike, « Répondre » et les réactions
+            passent alors à la ligne au lieu de déborder de la colonne.
+          */}
           <div className="-ml-2 flex flex-wrap items-center gap-1">
             <button
               type="button"
               aria-pressed={liked}
               aria-label={liked ? 'Retirer le like' : "J'aime ce commentaire"}
               onClick={() => onLike?.(comment)}
-              className="inline-flex items-center gap-1.5 rounded-pill px-2 py-1.5 text-kt-sm text-fg-muted transition-colors hover:bg-bg-hover hover:text-fg kt-focus-ring"
+              className="inline-flex items-center justify-center gap-1.5 rounded-pill px-2 py-1.5 text-kt-sm text-fg-muted transition-colors kt-tap hover:bg-bg-hover hover:text-fg kt-focus-ring"
             >
               <ThumbsUp
                 size={16}
@@ -258,7 +271,7 @@ export function CommentItem({
               aria-pressed={disliked}
               aria-label={disliked ? 'Retirer le dislike' : "Je n'aime pas"}
               onClick={() => onDislike?.(comment)}
-              className="inline-flex items-center rounded-pill px-2 py-1.5 text-fg-muted transition-colors hover:bg-bg-hover hover:text-fg kt-focus-ring"
+              className="inline-flex items-center justify-center rounded-pill px-2 py-1.5 text-fg-muted transition-colors kt-tap hover:bg-bg-hover hover:text-fg kt-focus-ring"
             >
               <ThumbsDown
                 size={16}
@@ -271,7 +284,7 @@ export function CommentItem({
               <button
                 type="button"
                 onClick={() => onReply(comment)}
-                className="rounded-pill px-3 py-1.5 text-kt-sm font-medium text-fg transition-colors hover:bg-bg-hover kt-focus-ring"
+                className="inline-flex items-center rounded-pill px-3 py-1.5 text-kt-sm font-medium text-fg transition-colors kt-tap-y hover:bg-bg-hover kt-focus-ring"
               >
                 Répondre
               </button>
@@ -286,7 +299,7 @@ export function CommentItem({
                 aria-label={`${reaction.emoji} ${reaction.count}`}
                 onClick={() => onReact?.(comment, reaction.emoji)}
                 className={cn(
-                  'inline-flex items-center gap-1 rounded-pill border px-2 py-0.5 text-kt-sm transition-colors kt-focus-ring',
+                  'inline-flex items-center gap-1 rounded-pill border px-2 py-0.5 text-kt-sm transition-colors kt-tap-y kt-focus-ring',
                   reaction.reacted
                     ? 'border-accent-fg bg-accent/40 text-fg'
                     : 'border-border text-fg-muted hover:bg-bg-hover',
@@ -327,7 +340,7 @@ export function CommentItem({
               type="button"
               aria-expanded={repliesOpen}
               onClick={() => onToggleReplies(comment)}
-              className="mt-1 inline-flex w-fit items-center gap-2 rounded-pill px-3 py-1.5 text-kt-base font-medium text-accent-fg transition-colors hover:bg-accent/30 kt-focus-ring"
+              className="mt-1 inline-flex w-fit items-center gap-2 rounded-pill px-3 py-1.5 text-left text-kt-base font-medium text-accent-fg transition-colors kt-tap-y hover:bg-accent/30 kt-focus-ring"
             >
               <ChevronDown
                 size={18}
@@ -360,6 +373,9 @@ export function CommentItem({
                 {...triggerProps}
                 aria-label="Actions sur le commentaire"
                 size="sm"
+                // Colonne de droite d'une ligne déjà indentée : on étend la
+                // zone tactile sans élargir la boîte (cf. `IconButton`).
+                touchTarget="halo"
                 className="text-fg-muted"
               >
                 <MoreVertical size={16} />

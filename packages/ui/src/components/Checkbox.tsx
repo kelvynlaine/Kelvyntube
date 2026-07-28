@@ -44,6 +44,10 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
               aria-describedby={ids.describedBy}
               className={cn(
                 'peer absolute inset-0 z-10 size-full cursor-pointer opacity-0 disabled:cursor-not-allowed',
+                // L'input transparent est ce qu'on touche : on le recentre et
+                // on l'agrandit à 44 px au doigt, le carré visible de 18 px
+                // reste intact (sinon la ligne label/description se décalerait).
+                'kt-tap-overlay',
                 className,
               )}
               {...rest}

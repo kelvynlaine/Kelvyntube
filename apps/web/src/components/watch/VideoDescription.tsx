@@ -88,7 +88,11 @@ export function VideoDescription({
               type="button"
               aria-expanded={expanded}
               onClick={() => setExpanded((current) => !current)}
-              className="mt-2 rounded font-medium text-fg hover:underline kt-focus-ring"
+              /*
+               * `kt-tap-y` : au doigt (et au doigt seulement), « ...plus »
+               * passe de 20 px à 44 px de haut. Le rendu souris est inchangé.
+               */
+              className="mt-1 inline-flex items-center rounded font-medium text-fg hover:underline kt-focus-ring kt-tap-y"
             >
               {expanded ? 'Afficher moins' : '...plus'}
             </button>

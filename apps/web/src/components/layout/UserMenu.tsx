@@ -94,15 +94,27 @@ export function UserMenu() {
     <DropdownMenu
       align="end"
       items={items}
-      trigger={
+      /**
+       * Forme « render prop » : `DropdownMenu` enveloppe sinon le trigger dans
+       * son propre <button>, ce qui imbriquerait deux boutons (HTML invalide
+       * et erreur d'hydratation). Ici on fournit notre bouton et on y branche
+       * les props d'accessibilité du menu.
+       */
+      trigger={(triggerProps) => (
         <button
+          {...triggerProps}
           type="button"
           aria-label="Menu du compte"
-          className="rounded-full kt-focus-ring"
+          /*
+           * L'avatar ne fait que 32 px : `kt-tap` porte la boîte à 44 × 44 au
+           * doigt uniquement (l'image, elle, ne change pas de taille) — sinon
+           * la cible la plus utilisée de la barre est la plus difficile à viser.
+           */
+          className="inline-flex items-center justify-center rounded-full kt-focus-ring kt-tap"
         >
           <Avatar name={user.displayName} src={user.avatarUrl ?? undefined} size="sm" />
         </button>
-      }
+      )}
     />
   );
 }

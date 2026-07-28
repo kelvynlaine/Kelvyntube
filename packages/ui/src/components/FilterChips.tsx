@@ -75,7 +75,11 @@ export function FilterChips({
             type="button"
             aria-label="Faire défiler vers la gauche"
             onClick={() => scrollBy(-1)}
-            className="absolute left-0 top-1/2 z-20 -translate-y-1/2 rounded-full bg-bg p-1.5 text-fg shadow-md transition-colors hover:bg-bg-hover kt-focus-ring"
+            // `kt-coarse-hidden` : au doigt on fait glisser la rangée
+            // directement. Une flèche de 32 px posée par-dessus les chips leur
+            // volerait leur zone tactile sans rien apporter — elle ne sert
+            // qu'au pointeur fin, qui ne sait pas « swiper ».
+            className="absolute left-0 top-1/2 z-20 inline-flex -translate-y-1/2 items-center justify-center rounded-full bg-bg p-1.5 text-fg shadow-md transition-colors hover:bg-bg-hover kt-coarse-hidden kt-focus-ring"
           >
             <ChevronLeft size={20} />
           </button>
@@ -86,7 +90,9 @@ export function FilterChips({
         ref={scrollerRef}
         role="group"
         aria-label={label}
-        className="kt-no-scrollbar flex items-center gap-3 overflow-x-auto scroll-smooth py-1"
+        // `overscroll-x-contain` : arrivé en bout de rangée, le balayage ne
+        // déclenche pas le geste « retour » du navigateur mobile.
+        className="kt-no-scrollbar flex items-center gap-2 overflow-x-auto overscroll-x-contain scroll-smooth py-1 xs:gap-3"
       >
         {chips.map((chip) => (
           <Chip
@@ -109,7 +115,7 @@ export function FilterChips({
             type="button"
             aria-label="Faire défiler vers la droite"
             onClick={() => scrollBy(1)}
-            className="absolute right-0 top-1/2 z-20 -translate-y-1/2 rounded-full bg-bg p-1.5 text-fg shadow-md transition-colors hover:bg-bg-hover kt-focus-ring"
+            className="absolute right-0 top-1/2 z-20 inline-flex -translate-y-1/2 items-center justify-center rounded-full bg-bg p-1.5 text-fg shadow-md transition-colors hover:bg-bg-hover kt-coarse-hidden kt-focus-ring"
           >
             <ChevronRight size={20} />
           </button>

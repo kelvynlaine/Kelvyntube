@@ -157,10 +157,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             ) : null
           }
           onCreateClick={handleCreate}
-          user={
-            user ? { displayName: user.displayName, avatarUrl: user.avatarUrl } : null
-          }
-          onSignIn={() => requireAuth()}
+          /*
+           * `TopBar` sait afficher un avatar à partir de `user`, mais ce n'est
+           * qu'un bouton : il ne peut pas ancrer le menu déroulant du compte.
+           * On lui laisse donc uniquement le bouton « Se connecter » (visiteur
+           * anonyme) et c'est `rightSlot` qui fournit l'avatar + son menu —
+           * sinon les deux avatars s'affichent côte à côte.
+           */
+          user={null}
+          onSignIn={user ? undefined : () => requireAuth()}
           rightSlot={
             user ? (
               <div className="relative flex items-center gap-1">
@@ -215,7 +220,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         onClose={() => setDrawerOpen(false)}
         side="left"
         title="Menu"
-        sizeClassName="w-sidebar"
+        /*
+         * 240 px sur tablette, mais jamais plus de 85 % de l'écran : à 320 px
+         * l'overlay reste visible et tapable pour refermer le tiroir.
+         */
+        sizeClassName="w-[min(theme(spacing.sidebar),85vw)]"
       >
         <Sidebar {...sidebarProps} onNavigate={() => setDrawerOpen(false)} showFooter />
       </Sheet>
@@ -224,22 +233,34 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main
         className={cn(
           'pt-topbar transition-[padding] duration-200 ease-kt',
-          'pb-bottomnav feed-3:pb-0',
+          /*
+           * La `BottomNav` est `fixed` : sans cette réserve, la dernière carte
+           * du feed passe dessous et devient intapable. On y ajoute la
+           * safe-area iOS (barre d'accueil) que la nav absorbe elle aussi.
+           */
+          'pb-[calc(theme(spacing.bottomnav)+env(safe-area-inset-bottom))] feed-3:pb-0',
           isDesktop && (collapsed ? 'feed-4:pl-sidebar-mini' : 'feed-4:pl-sidebar'),
         )}
       >
-        <div className="mx-auto w-full max-w-feed px-4 py-6 feed-3:px-6">{children}</div>
+        {/*
+         * Le `<main>` compense déjà la `TopBar` fixe (`pt-topbar` = 56 px).
+         * Sur mobile on réduit donc fortement la gouttière verticale interne :
+         * additionnée, elle repoussait le contenu à 80 px du haut et écrasait
+         * la zone utile. Les chips restent collées sous l'en-tête (YouTube).
+         * Le padding confortable est rétabli à partir de `feed-3` (900 px).
+         */}
+        <div className="mx-auto w-full max-w-feed px-4 pb-4 pt-2 feed-3:px-6 feed-3:py-6">
+          {children}
+        </div>
       </main>
 
-      {/* ── Navigation mobile ──────────────────────────────────────────── */}
-      <div className="fixed inset-x-0 bottom-0 z-40 feed-3:hidden">
-        <BottomNav
-          items={BOTTOM_NAV_ITEMS}
-          activeHref={pathname}
-          onCreate={handleCreate}
-          linkComponent={Link}
-        />
-      </div>
+      {/* ── Navigation mobile (déjà `fixed` + safe-area côté design system) ─ */}
+      <BottomNav
+        items={BOTTOM_NAV_ITEMS}
+        activeHref={pathname}
+        onCreate={handleCreate}
+        linkComponent={Link}
+      />
 
       {/* ── Surfaces globales ──────────────────────────────────────────── */}
       <AuthModal />

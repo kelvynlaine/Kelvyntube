@@ -134,6 +134,100 @@ body {
   outline-offset: 2px;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Cibles tactiles — 44 × 44 px minimum (WCAG 2.5.5 niveau AAA / Apple HIG)
+
+   TOUT est enfermé dans `@media (pointer: coarse)`. Le pointeur « grossier »
+   c'est le doigt : la souris et le trackpad ne matchent jamais cette requête,
+   donc le rendu desktop reste bit pour bit celui d'aujourd'hui. C'est la seule
+   façon d'agrandir une zone de clic sans grossir les icônes sur écran large.
+
+   Trois stratégies, de la moins à la plus discrète :
+   • `.kt-tap`        la boîte elle-même atteint 44 × 44. À utiliser quand la
+                      croissance ne décale rien (bouton icône isolé d'une
+                      barre d'outils, où la hauteur est déjà contrainte).
+   • `.kt-tap-y`      seule la hauteur passe à 44 ; la largeur reste dictée par
+                      le texte (chips, onglets, entrées de menu, boutons pill).
+   • `.kt-tap-halo`   la boîte visible ne bouge pas d'un pixel : un `::after`
+                      transparent et centré porte la zone sensible à 44 × 44.
+                      Réservé aux rangées denses où agrandir volerait de la
+                      largeur au texte (menu « ⋮ » d'une carte compacte) et aux
+                      contrôles dont la taille est le style (interrupteur).
+   `.kt-tap-overlay` est la variante « élément déjà en position absolue »
+   (l'`<input>` transparent d'une case à cocher).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@media (pointer: coarse) {
+  .kt-tap {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .kt-tap-y {
+    min-height: 44px;
+  }
+
+  .kt-tap-halo {
+    position: relative;
+  }
+  .kt-tap-halo::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    /* `max()` : on n'écrase jamais une cible déjà plus grande que 44 px. */
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+
+  /*
+   * Classe doublée volontairement : elle doit battre les utilitaires Tailwind
+   * `inset-0` et `size-full` posés sur le même élément, or la couche
+   * `utilities` est émise APRÈS ce fichier. Deux classes = spécificité 0,2,0.
+   */
+  .kt-tap-overlay.kt-tap-overlay {
+    inset: auto;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+
+  /*
+   * Classes composées déclarées par l'application (couche `components` de
+   * Tailwind, cf. `apps/web/src/app/globals.css`). On n'y ajoute QUE des
+   * propriétés absentes de la déclaration d'origine (`min-height`,
+   * `align-items`) : il n'y a donc aucun conflit d'ordre de cascade, quel que
+   * soit l'endroit où ce fichier est importé.
+   */
+  .kt-chip {
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .kt-btn-primary,
+  .kt-btn-secondary {
+    min-height: 44px;
+  }
+
+  .kt-btn-ghost {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .kt-sidebar-item {
+    min-height: 44px;
+  }
+
+  /* Affordances qui n'ont aucun sens au doigt (infobulles de survol, flèches
+     de défilement d'une rangée qu'on fait glisser directement). */
+  .kt-coarse-hidden {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

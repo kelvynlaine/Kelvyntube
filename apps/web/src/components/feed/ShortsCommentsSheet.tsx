@@ -9,7 +9,7 @@ import {
   type CommentDTO,
   type CursorPage,
 } from '@kelvyntube/shared';
-import { CommentThread, EmptyState, Sheet } from '@kelvyntube/ui';
+import { CommentThread, EmptyState, Sheet, useMediaQuery } from '@kelvyntube/ui';
 import { MessageSquare } from 'lucide-react';
 import { api } from '@/lib/api';
 import { FeedErrorState } from './FeedErrorState';
@@ -36,6 +36,14 @@ export function ShortsCommentsSheet({
   commentCount,
   creatorName,
 }: ShortsCommentsSheetProps) {
+  /*
+   * Sur mobile les commentaires arrivent par le bas (comportement YouTube
+   * Shorts) : une feuille latérale de 420 px couvrirait tout l'écran et
+   * masquerait la vidéo. À partir de `feed-3` (900 px) on garde le panneau
+   * de droite, qui laisse le Short visible.
+   */
+  const isDesktop = useMediaQuery('(min-width: 900px)');
+
   const query = useInfiniteQuery({
     queryKey: ['comments', videoId, 'top'],
     enabled: open,
@@ -61,11 +69,12 @@ export function ShortsCommentsSheet({
     <Sheet
       open={open}
       onClose={onClose}
-      side="right"
+      side={isDesktop ? 'right' : 'bottom'}
       title={`Commentaires · ${formatCompactNumber(commentCount)}`}
-      sizeClassName="w-[min(420px,100vw)]"
+      sizeClassName={isDesktop ? 'w-[min(420px,100vw)]' : 'h-[70dvh] max-h-[70dvh]'}
     >
-      <div className="px-4 py-4">
+      {/* Le bas suit la safe-area iOS : le dernier commentaire reste lisible. */}
+      <div className="px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4">
         {query.isError ? (
           <FeedErrorState
             title="Commentaires indisponibles"

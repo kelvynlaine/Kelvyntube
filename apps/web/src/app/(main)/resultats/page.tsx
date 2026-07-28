@@ -42,7 +42,8 @@ export default function ResultsPage() {
     // `useSearchParams` impose une frontière Suspense côté serveur.
     <Suspense
       fallback={
-        <div className="mx-auto w-full max-w-[1096px] px-4 py-4 feed-3:px-6">
+        // La gouttière vient du conteneur d'`AppShell` : pas de double marge.
+        <div className="mx-auto w-full max-w-[1096px]">
           <SearchResultsSkeleton />
         </div>
       }

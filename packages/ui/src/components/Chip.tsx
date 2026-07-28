@@ -20,7 +20,13 @@ export const Chip = forwardRef<HTMLButtonElement, ChipProps>(function Chip(
       type={type}
       aria-pressed={active}
       className={cn(
-        'kt-chip inline-flex items-center gap-1.5',
+        // `.kt-chip` fait 32 px de haut (padding 6 px + interligne 20 px), ce
+        // qui est sous le minimum tactile. `kt-tap-y` le porte à 44 px sur
+        // pointeur grossier uniquement — la souris garde la pastille compacte
+        // de YouTube. Le même correctif est appliqué en CSS à `.kt-chip` dans
+        // `styles.css`, pour couvrir les usages bruts de la classe hors de ce
+        // composant.
+        'kt-chip inline-flex items-center gap-1.5 kt-tap-y',
         active && 'kt-chip-active',
         className,
       )}

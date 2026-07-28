@@ -30,7 +30,7 @@ function LinkButton({
     <Link
       href={href}
       className={cn(
-        'inline-flex h-9 items-center gap-2 rounded-pill px-4 text-kt-base font-medium transition-colors kt-focus-ring',
+        'inline-flex h-11 items-center gap-2 rounded-pill px-4 text-kt-base font-medium transition-colors kt-focus-ring feed-3:h-9',
         variant === 'primary'
           ? 'bg-fg text-fg-inverse hover:opacity-90'
           : 'bg-bg-elevated text-fg hover:bg-bg-active',

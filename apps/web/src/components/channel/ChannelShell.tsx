@@ -24,7 +24,8 @@ function ChannelHeaderSkeleton() {
     <div className="flex flex-col gap-4" aria-hidden="true">
       <Skeleton className="-mx-4 h-[clamp(96px,17vw,240px)] rounded-none feed-3:-mx-6 feed-3:rounded-kt" />
       <div className="flex items-center gap-4">
-        <Skeleton variant="circle" className="size-20 shrink-0 feed-3:size-40" />
+        {/* Même dimensionnement que l'avatar réel : aucun saut de mise en page. */}
+        <Skeleton variant="circle" className="size-16 shrink-0 xs:size-20 feed-3:size-40" />
         <div className="flex min-w-0 flex-1 flex-col gap-3">
           <Skeleton variant="text" className="h-6 w-48" />
           <Skeleton variant="text" className="h-4 w-64" />
@@ -83,17 +84,23 @@ export function ChannelShell({ handle, children }: ChannelShellProps) {
       ) : null}
 
       {/* ── Identité ───────────────────────────────────────────────────── */}
-      <header className="flex flex-col gap-4 py-4 feed-3:flex-row feed-3:items-center feed-3:gap-6 feed-3:py-6">
+      {/*
+        Sur mobile l'avatar reste sur la même ligne que l'identité (comportement
+        YouTube) : empilé, il consommait 80 px de hauteur utile pour rien.
+        Il est aussi réduit à 64 px sous 480 px pour laisser respirer le nom.
+      */}
+      <header className="flex flex-row items-start gap-4 py-4 feed-3:items-center feed-3:gap-6 feed-3:py-6">
         <Avatar
           name={channel.name}
           src={channel.avatarUrl}
           size="xl"
           alt={`Avatar de ${channel.name}`}
-          className="size-20 text-kt-lg feed-3:size-40 feed-3:text-[56px]"
+          className="size-16 shrink-0 text-kt-md xs:size-20 xs:text-kt-lg feed-3:size-40 feed-3:text-[56px]"
         />
 
         <div className="flex min-w-0 flex-1 flex-col gap-2">
-          <h1 className="flex min-w-0 items-center gap-2 text-kt-xl font-bold text-fg">
+          {/* `text-kt-lg` sous 480 px : un nom long tenait sur trois lignes. */}
+          <h1 className="flex min-w-0 items-center gap-2 text-kt-lg font-bold text-fg xs:text-kt-xl">
             <span className="min-w-0 break-words">{channel.name}</span>
             {channel.verified ? <VerifiedBadge size={16} /> : null}
           </h1>

@@ -14,6 +14,7 @@ import {
   type TooltipProps,
 } from 'recharts';
 import { useChartTheme } from '../chart-theme';
+import { ChartFrame } from '../ChartFrame';
 import { formatPercent } from '../../studio-format';
 import { ChartTooltipCard } from './ChartTooltipCard';
 
@@ -23,6 +24,8 @@ export interface RetentionChartProps {
   /** Durée de la vidéo, pour convertir un bucket en horodatage. */
   durationSec: number;
   height?: number;
+  /** Hauteur réduite en mobile (cf. `ChartFrame`). */
+  mobileHeight?: number;
 }
 
 /**
@@ -39,6 +42,7 @@ export function RetentionChartImpl({
   retention,
   durationSec,
   height = 300,
+  mobileHeight = 210,
 }: RetentionChartProps) {
   const theme = useChartTheme();
   const gradientId = `kt-retention-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -69,13 +73,12 @@ export function RetentionChartImpl({
   };
 
   return (
-    <div
-      role="img"
-      aria-label={`Courbe de rétention d'audience : ${formatPercent(average)} de spectateurs restants en moyenne`}
-      style={{ height }}
-      className="w-full"
+    <ChartFrame
+      height={height}
+      mobileHeight={mobileHeight}
+      label={`Courbe de rétention d'audience : ${formatPercent(average)} de spectateurs restants en moyenne`}
     >
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <AreaChart data={retention} margin={{ top: 12, right: 12, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -102,12 +105,13 @@ export function RetentionChartImpl({
             tick={{ fill: theme.axis, fontSize: 11 }}
             tickLine={false}
             axisLine={false}
-            width={44}
+            width={40}
           />
 
           <Tooltip
             content={renderTooltip}
             cursor={{ stroke: theme.axis, strokeDasharray: '3 3' }}
+            wrapperStyle={{ zIndex: 10, outline: 'none' }}
           />
 
           <ReferenceLine
@@ -131,11 +135,12 @@ export function RetentionChartImpl({
             strokeWidth={2}
             fill={`url(#${gradientId})`}
             dot={false}
-            activeDot={{ r: 4, strokeWidth: 0 }}
+            // Point actif plus large : au doigt, 4 px de rayon est intenable.
+            activeDot={{ r: 6, strokeWidth: 0 }}
             isAnimationActive={false}
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </ChartFrame>
   );
 }

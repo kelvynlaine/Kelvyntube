@@ -273,7 +273,7 @@ export function Sidebar({
       <nav
         aria-label="Navigation principale"
         className={cn(
-          'kt-scroll flex w-sidebar-mini shrink-0 flex-col overflow-y-auto bg-bg py-1',
+          'kt-scroll flex w-sidebar-mini max-w-full shrink-0 flex-col overflow-y-auto overscroll-contain bg-bg py-1',
           className,
         )}
       >
@@ -292,7 +292,11 @@ export function Sidebar({
                   )}
                 >
                   <span aria-hidden="true">{item.icon}</span>
-                  <span className="text-kt-xs leading-none">{item.label}</span>
+                  {/* Le rail ne fait que 72 px : « Abonnements » doit pouvoir
+                      s'y couper proprement plutôt que de l'élargir. */}
+                  <span className="w-full truncate text-center text-kt-xs leading-none">
+                    {item.label}
+                  </span>
                 </Link>
               </li>
             );
@@ -310,7 +314,11 @@ export function Sidebar({
     <nav
       aria-label="Navigation principale"
       className={cn(
-        'kt-scroll flex w-sidebar shrink-0 flex-col gap-3 overflow-y-auto bg-bg px-3 py-3',
+        // `max-w-full` : rendue dans un `Sheet` de `min(320px,85vw)`, la
+        // sidebar de 240 px ne doit jamais forcer un débordement horizontal
+        // sur un écran de 320 px. `overscroll-contain` empêche le défilement
+        // de se propager à la page sous le panneau.
+        'kt-scroll flex w-sidebar max-w-full shrink-0 flex-col gap-3 overflow-y-auto overscroll-contain bg-bg px-3 py-3',
         className,
       )}
     >
@@ -404,7 +412,12 @@ export function Sidebar({
                 key={link.href}
                 href={link.href}
                 onClick={() => onNavigate?.(link.href)}
-                className="rounded kt-focus-ring hover:text-fg-muted"
+                // Liens légaux : 11 px de texte sur une ligne de 16 px, c'est
+                // intouchable au doigt. On ne peut pas les porter à 44 px
+                // (ils s'enroulent sur plusieurs lignes et se chevaucheraient),
+                // mais 32 px de hauteur les rend atteignables sans casser
+                // l'aspect « bloc de liens » du pied de sidebar.
+                className="inline-flex min-h-[32px] items-center rounded kt-focus-ring hover:text-fg-muted"
               >
                 {link.label}
               </Link>

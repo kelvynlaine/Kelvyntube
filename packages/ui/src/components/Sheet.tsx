@@ -26,16 +26,29 @@ export interface SheetProps {
   overlayClassName?: string;
 }
 
+/**
+ * Chaque côté colle à un bord physique de l'écran : on y ajoute le retrait de
+ * sécurité correspondant (encoche en paysage à gauche/droite, indicateur
+ * d'accueil en bas), sinon le contenu passe sous le matériel sur iPhone.
+ */
 const SIDES: Record<SheetSide, string> = {
-  left: 'left-0 top-0 h-full animate-slide-in-left border-r',
-  right: 'right-0 top-0 h-full animate-fade-in border-l',
-  bottom: 'bottom-0 left-0 w-full rounded-t-kt-lg border-t animate-slide-up',
+  left: 'left-0 top-0 h-full animate-slide-in-left border-r pl-[env(safe-area-inset-left)]',
+  right:
+    'right-0 top-0 h-full animate-fade-in border-l pr-[env(safe-area-inset-right)]',
+  bottom:
+    'bottom-0 left-0 w-full rounded-t-kt-lg border-t animate-slide-up pb-[env(safe-area-inset-bottom)]',
 };
 
+/**
+ * Largeurs par défaut. `min(…, 85vw)` garantit qu'une bande de l'écran reste
+ * visible et touchable pour refermer le panneau, y compris à 320 px.
+ * `dvh` plutôt que `vh` pour le panneau bas : la barre d'URL mobile rognait
+ * sinon le pied de page.
+ */
 const DEFAULT_SIZE: Record<SheetSide, string> = {
   left: 'w-[min(320px,85vw)]',
-  right: 'w-[min(400px,90vw)]',
-  bottom: 'max-h-[85vh]',
+  right: 'w-[min(400px,85vw)]',
+  bottom: 'max-h-[85dvh]',
 };
 
 /** Panneau latéral coulissant (menu mobile, partage, filtres…). */
@@ -113,7 +126,11 @@ export function Sheet({
           </header>
         )}
 
-        <div className="kt-scroll flex-1 overflow-y-auto">{children}</div>
+        {/* `overscroll-contain` : le panneau capture son propre défilement,
+            la page en arrière-plan ne bouge plus (« scroll chaining »). */}
+        <div className="kt-scroll flex-1 overflow-y-auto overscroll-contain">
+          {children}
+        </div>
 
         {footer ? (
           <footer className="border-t border-border px-4 py-3">{footer}</footer>

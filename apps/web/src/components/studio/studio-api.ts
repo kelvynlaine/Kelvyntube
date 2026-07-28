@@ -84,8 +84,6 @@ export interface VideoSettingsExtraDTO {
   madeForKids?: boolean;
   ageRestricted?: boolean;
   language?: string | null;
-  /** Miniatures générées automatiquement par le worker (3 en général). */
-  thumbnailCandidates?: string[];
 }
 
 export type StudioVideoDetailDTO = VideoDetailDTO & VideoSettingsExtraDTO;

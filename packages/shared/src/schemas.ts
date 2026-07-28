@@ -247,6 +247,50 @@ export const suggestSchema = z.object({
   q: z.string().min(1).max(100),
 });
 
+/**
+ * Suggestions de hashtags du formulaire de publication.
+ * `q` est OPTIONNEL : sans terme de recherche, l'API renvoie l'ensemble des
+ * hashtags existants (les plus utilisés d'abord), ce qui alimente le panel
+ * « tous les hashtags » du Studio.
+ */
+export const tagSuggestSchema = z.object({
+  q: z.string().max(100).optional(),
+  limit: z.coerce.number().int().min(1).max(200).default(60),
+});
+
+// ── Booster d'engagement (Studio) ──────────────────────────────────────────
+
+/** Plafonds volontairement explicites — ils bornent aussi l'UI. */
+export const BOOST_LIMITS = {
+  views: 7_000_000_000,
+  likes: 500_000_000,
+  dislikes: 50_000_000,
+  /** Les commentaires créent de vraies lignes : plafond bien plus bas. */
+  comments: 2_000,
+  subscribers: 500_000_000,
+} as const;
+
+export const boostSchema = z
+  .object({
+    /** Cible : une vidéo précise, ou toute la chaîne si omis. */
+    videoId: z.string().optional(),
+    views: z.number().int().min(0).max(BOOST_LIMITS.views).default(0),
+    likes: z.number().int().min(0).max(BOOST_LIMITS.likes).default(0),
+    dislikes: z.number().int().min(0).max(BOOST_LIMITS.dislikes).default(0),
+    comments: z.number().int().min(0).max(BOOST_LIMITS.comments).default(0),
+    subscribers: z.number().int().min(0).max(BOOST_LIMITS.subscribers).default(0),
+    /** Étale les statistiques sur N jours passés pour des courbes crédibles. */
+    spreadDays: z.number().int().min(1).max(365).default(30),
+  })
+  .refine(
+    (v) => v.views + v.likes + v.dislikes + v.comments + v.subscribers > 0,
+    { message: 'Choisis au moins une métrique à simuler', path: ['views'] },
+  )
+  .refine((v) => Boolean(v.videoId) || v.comments === 0, {
+    message: 'Les commentaires nécessitent de cibler une vidéo précise',
+    path: ['comments'],
+  });
+
 // ── Analytics ──────────────────────────────────────────────────────────────
 
 export const analyticsRangeSchema = z.object({
@@ -271,3 +315,5 @@ export type CreateCommentInput = z.infer<typeof createCommentSchema>;
 export type SearchInput = z.infer<typeof searchSchema>;
 export type HomeFeedInput = z.infer<typeof homeFeedSchema>;
 export type AnalyticsRangeInput = z.infer<typeof analyticsRangeSchema>;
+export type BoostInput = z.infer<typeof boostSchema>;
+export type TagSuggestInput = z.infer<typeof tagSuggestSchema>;

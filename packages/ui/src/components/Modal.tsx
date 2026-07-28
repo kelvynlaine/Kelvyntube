@@ -28,10 +28,17 @@ export interface ModalProps {
   bodyClassName?: string;
 }
 
+/**
+ * Largeurs maximales appliquées à partir de `xs` (480 px) seulement.
+ * Sous ce seuil la modale est volontairement pleine largeur et ancrée en bas
+ * (feuille montante) : une carte centrée de 320 px sur un téléphone laisse un
+ * corps de texte illisible et gaspille la moitié de la hauteur utile.
+ * Au-dessus de 480 px on retrouve exactement la carte centrée d'origine.
+ */
 const SIZES: Record<ModalSize, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-lg',
-  lg: 'max-w-3xl',
+  sm: 'xs:max-w-sm',
+  md: 'xs:max-w-lg',
+  lg: 'xs:max-w-3xl',
   full: 'h-full w-full max-w-none rounded-none',
 };
 
@@ -80,8 +87,10 @@ export function Modal({
   return createPortal(
     <div
       className={cn(
-        'fixed inset-0 z-[100] flex items-center justify-center p-4 animate-fade-in',
-        size === 'full' && 'p-0',
+        'fixed inset-0 z-[100] flex justify-center animate-fade-in',
+        size === 'full'
+          ? 'items-center p-0'
+          : 'items-end p-0 xs:items-center xs:p-4',
         overlayClassName,
       )}
     >
@@ -102,12 +111,20 @@ export function Modal({
         className={cn(
           'relative flex max-h-full w-full flex-col overflow-hidden rounded-kt-lg',
           'border border-border bg-bg-elevated shadow-2xl animate-slide-up',
+          size !== 'full' &&
+            // Feuille montante sous 480 px : coins bas droits (elle touche le
+            // bord), 92 % de la hauteur *visible* (`dvh` tient compte de la
+            // barre d'URL mobile) et retrait de sécurité en bas pour ne pas
+            // passer sous l'indicateur d'accueil iOS.
+            'max-h-[92dvh] rounded-b-none pb-[env(safe-area-inset-bottom)] xs:max-h-full xs:rounded-b-kt-lg xs:pb-0',
           SIZES[size],
           className,
         )}
       >
         {(title || !hideCloseButton) && (
-          <header className="flex items-start gap-4 px-6 pb-2 pt-5">
+          // Gouttières réduites sous 480 px : 2 × 24 px de marge, c'est 15 %
+          // de la largeur d'un écran de 320 px.
+          <header className="flex items-start gap-3 px-4 pb-2 pt-4 xs:gap-4 xs:px-6 xs:pt-5">
             <div className="min-w-0 flex-1">
               {title ? (
                 <h2 id={titleId} className="text-kt-lg font-medium text-fg">
@@ -133,12 +150,21 @@ export function Modal({
           </header>
         )}
 
-        <div className={cn('kt-scroll flex-1 overflow-y-auto px-6 py-4', bodyClassName)}>
+        {/* `overscroll-contain` : le geste de défilement s'arrête au bord du
+            corps de la modale au lieu de faire défiler la page derrière. */}
+        <div
+          className={cn(
+            'kt-scroll flex-1 overflow-y-auto overscroll-contain px-4 py-4 xs:px-6',
+            bodyClassName,
+          )}
+        >
           {children}
         </div>
 
         {footer ? (
-          <footer className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+          // `flex-wrap` : deux boutons de 44 px et leurs libellés ne tiennent
+          // pas toujours sur une ligne à 320 px.
+          <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-4 py-3 xs:px-6 xs:py-4">
             {footer}
           </footer>
         ) : null}

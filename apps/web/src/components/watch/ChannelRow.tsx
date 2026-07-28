@@ -58,8 +58,13 @@ export function ChannelRow({
         href={PATHS.channel(video.channel.handle)}
         linkComponent={Link}
         nameClassName="text-kt-md"
-        // La maquette demande 48 px : on agrandit l'avatar du composant.
-        className="[&>span:first-child]:size-12 [&>span:first-child]:text-kt-md"
+        /*
+         * La maquette demande 48 px : on agrandit l'avatar du composant.
+         * `min-w-0 flex-1` + `shrink-0` sur l'avatar : à 320 px c'est le NOM
+         * qui se tronque, jamais l'avatar ni le bouton « S'abonner » qui
+         * seraient sinon poussés hors de l'écran.
+         */
+        className="min-w-0 flex-1 [&>span:first-child]:size-12 [&>span:first-child]:shrink-0 [&>span:first-child]:text-kt-md"
       />
 
       {isOwner ? null : (

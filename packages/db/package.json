@@ -15,7 +15,8 @@
     "studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
     "typecheck": "tsc --noEmit",
-    "build": "prisma generate"
+    "build": "prisma generate",
+    "purge-demo": "tsx prisma/purge-demo.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -95,7 +95,7 @@ export function AnalyticsScreen() {
         title="Statistiques indisponibles"
         description="Impossible de charger les analytics de cette chaîne pour le moment."
         action={
-          <button type="button" className="kt-btn-secondary" onClick={() => void overview.refetch()}>
+          <button type="button" className="kt-btn-secondary min-h-11" onClick={() => void overview.refetch()}>
             Réessayer
           </button>
         }
@@ -165,15 +165,20 @@ export function AnalyticsScreen() {
 
           <Panel
             title={activeMetric.label}
+            // `min-w-0` : sans lui le groupe de chips refuse de rétrécir et
+            // déborde de l'écran. `min-h-11` : `.kt-chip` ne fait que 32 px.
             actions={
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex min-w-0 flex-wrap gap-1.5">
                 {METRICS.map((m) => (
                   <button
                     key={m.key}
                     type="button"
                     onClick={() => setMetric(m.key)}
                     aria-pressed={m.key === metric}
-                    className={cn('kt-chip', m.key === metric && 'kt-chip-active')}
+                    className={cn(
+                      'kt-chip min-h-11 feed-3:min-h-0',
+                      m.key === metric && 'kt-chip-active',
+                    )}
                   >
                     {m.label}
                   </button>
@@ -188,10 +193,11 @@ export function AnalyticsScreen() {
               formatValue={activeMetric.format}
               color={theme.accent}
               height={320}
+              mobileHeight={210}
             />
           </Panel>
 
-          <div className="grid grid-cols-2 gap-3 feed-3:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 feed-3:grid-cols-3">
             <StatCard
               icon={<MousePointerClick size={18} />}
               label="Taux de clic (miniatures)"
@@ -231,16 +237,24 @@ export function AnalyticsScreen() {
                 size="sm"
               />
             ) : (
-              <table className="w-full text-kt-base">
+              // `table-fixed` + paddings réduits : le tableau se plie à la
+              // largeur du conteneur au lieu de l'élargir jusqu'au débordement.
+              <table className="w-full table-fixed text-kt-base">
                 <thead>
                   <tr className="border-b border-border text-left text-kt-sm text-fg-muted">
-                    <th scope="col" className="px-4 py-2 font-medium">
+                    <th scope="col" className="px-3 py-2 font-medium feed-2:px-4">
                       Vidéo
                     </th>
-                    <th scope="col" className="px-4 py-2 text-right font-medium">
+                    <th
+                      scope="col"
+                      className="w-20 px-3 py-2 text-right font-medium feed-2:px-4"
+                    >
                       Vues
                     </th>
-                    <th scope="col" className="hidden px-4 py-2 text-right font-medium feed-2:table-cell">
+                    <th
+                      scope="col"
+                      className="hidden w-32 px-4 py-2 text-right font-medium feed-2:table-cell"
+                    >
                       Temps de visionnage
                     </th>
                   </tr>
@@ -248,9 +262,9 @@ export function AnalyticsScreen() {
                 <tbody>
                   {data.topVideos.map((v, index) => (
                     <tr key={v.id} className="border-b border-border last:border-0">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <span className="w-5 shrink-0 text-right text-kt-sm text-fg-subtle">
+                      <td className="px-3 py-3 feed-2:px-4">
+                        <div className="flex items-center gap-2 feed-2:gap-3">
+                          <span className="w-4 shrink-0 text-right text-kt-sm text-fg-subtle">
                             {index + 1}
                           </span>
                           <StudioThumbnail url={v.thumbnailUrl} className="h-[45px] w-20" />
@@ -262,7 +276,9 @@ export function AnalyticsScreen() {
                           </Link>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums">{formatNumber(v.views)}</td>
+                      <td className="px-3 py-3 text-right tabular-nums feed-2:px-4">
+                        {formatNumber(v.views)}
+                      </td>
                       <td className="hidden px-4 py-3 text-right tabular-nums feed-2:table-cell">
                         {formatHours(v.watchTimeHours)}
                       </td>
@@ -311,6 +327,7 @@ export function AnalyticsScreen() {
               points={realtime.data?.perHour ?? data.realtime.perHour}
               seriesName="Vues"
               height={140}
+              mobileHeight={120}
             />
           </Panel>
 

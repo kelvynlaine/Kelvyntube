@@ -20,6 +20,7 @@ import {
   VolumeX,
 } from 'lucide-react';
 import type { TrafficSource, VideoDetailDTO } from '@kelvyntube/shared';
+import { useMediaQuery } from '@kelvyntube/ui';
 import { useHlsPlayer } from '@/hooks/useHlsPlayer';
 import { useWatchTracking } from '@/hooks/useWatchTracking';
 import { usePlayerKeyboard, type PlayerFeedback } from '@/hooks/usePlayerKeyboard';
@@ -710,7 +711,21 @@ export function VideoPlayer({
   }, [toggleFullscreen]);
 
   // ── Rendu ────────────────────────────────────────────────────────────────
-  const largeControls = isFullscreen;
+  /*
+   * Les contrôles « large » (44 px au lieu de 36 px, barre de progression de
+   * 24 px au lieu de 16 px) ne servaient qu'en plein écran. Or au doigt une
+   * cible de 36 px est trop petite : on les active aussi dès que le pointeur
+   * principal est grossier (tactile), quelle que soit la taille de l'écran.
+   */
+  const coarsePointer = useMediaQuery('(pointer: coarse)');
+  const largeControls = isFullscreen || coarsePointer;
+  /*
+   * Sous 640 px, une rangée complète de cibles à 44 px dépasse la largeur du
+   * lecteur et se fait rogner : on masque alors volume et mini-lecteur.
+   * Le critère est la largeur (et non le tactile) pour rester correct en
+   * plein écran paysage sur téléphone, où la place ne manque pas.
+   */
+  const compactControls = useMediaQuery('(max-width: 640px)');
   const showBigPlay = !started && !buffering && !sourceError;
   const chapters = video.chapters;
 
@@ -728,7 +743,8 @@ export function VideoPlayer({
       }}
       className={clsx(
         'group/player relative w-full select-none overflow-hidden bg-black text-white outline-none kt-focus-ring',
-        isFullscreen ? 'h-screen' : 'aspect-video',
+        // `dvh` : en plein écran mobile, `100vh` déborde de la hauteur utile.
+        isFullscreen ? 'h-[100dvh]' : 'aspect-video',
         !isFullscreen && !theaterMode && 'rounded-kt',
         playing && !controlsVisible ? 'cursor-none' : 'cursor-default',
         className,
@@ -912,6 +928,7 @@ export function VideoPlayer({
             isFullscreen={isFullscreen}
             onToggleFullscreen={toggleFullscreen}
             large={largeControls}
+            compact={compactControls}
           />
         </div>
       </div>

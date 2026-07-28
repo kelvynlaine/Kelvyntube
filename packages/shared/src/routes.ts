@@ -136,6 +136,8 @@ export const ROUTES = {
     videoAnalytics: (channelId: string, videoId: string) =>
       `${API_PREFIX}/studio/${channelId}/videos/${videoId}/analytics`,
     subscribers: (channelId: string) => `${API_PREFIX}/studio/${channelId}/subscribers`,
+    /** Booster d'engagement — outil de développement / démonstration. */
+    boost: (channelId: string) => `${API_PREFIX}/studio/${channelId}/boost`,
     comments: (channelId: string) => `${API_PREFIX}/studio/${channelId}/comments`,
     realtime: (channelId: string) => `${API_PREFIX}/studio/${channelId}/realtime`,
   },

@@ -230,7 +230,11 @@ export function ShortsFeed({ seedVideoId }: ShortsFeedProps) {
     <Link
       href={PATHS.home}
       aria-label="Retour à l'accueil"
-      className="absolute left-3 top-3 z-40 flex size-10 items-center justify-center rounded-full text-white bg-black/60 transition-colors hover:bg-black/80 kt-focus-ring"
+      /*
+       * Cible ≥ 44 px et décalage sous l'encoche iOS : sans la safe-area haute
+       * le bouton se retrouve sous la barre d'état en mode plein écran.
+       */
+      className="absolute left-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-40 flex size-10 items-center justify-center rounded-full text-white bg-black/60 transition-colors hover:bg-black/80 kt-focus-ring kt-tap"
     >
       <ArrowLeft size={22} aria-hidden="true" />
     </Link>
@@ -284,7 +288,12 @@ export function ShortsFeed({ seedVideoId }: ShortsFeedProps) {
 
       <div
         ref={containerRef}
-        className="kt-no-scrollbar h-full w-full snap-y snap-mandatory overflow-y-auto overscroll-y-contain"
+        /*
+         * `touch-action: pan-y` : le geste tactile est strictement vertical,
+         * ce qui évite que le navigateur hésite entre défilement et « swipe
+         * retour » horizontal et rende le passage d'un Short à l'autre saccadé.
+         */
+        className="kt-no-scrollbar h-full w-full touch-pan-y snap-y snap-mandatory overflow-y-auto overscroll-y-contain"
       >
         {items.map((video, position) => (
           <div key={video.id} className="h-[100dvh] w-full snap-start snap-always">

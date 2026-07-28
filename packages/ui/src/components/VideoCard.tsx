@@ -87,10 +87,20 @@ export function buildVideoMenuItems(
   ];
 }
 
+/**
+ * Largeur de la miniature par disposition.
+ *
+ * En `list` et `compact`, la largeur était fixée en pixels : à 360 px de
+ * viewport, 160 px puis 168 px de miniature mangeaient la moitié de la ligne
+ * et il ne restait qu'une colonne de texte inexploitable. On passe donc à un
+ * pourcentage borné (≈ 40 %) tant qu'on est sous 480 px, puis on rebascule sur
+ * les largeurs fixes historiques à partir de `xs` — le rendu ≥ 480 px, et donc
+ * tout le desktop, est inchangé.
+ */
 const THUMB_WIDTH: Record<VideoCardLayout, string> = {
   grid: 'w-full',
-  list: 'w-40 xs:w-60 feed-3:w-[360px] shrink-0',
-  compact: 'w-[168px] shrink-0',
+  list: 'w-[40%] min-w-[112px] max-w-[180px] shrink-0 xs:w-60 xs:max-w-none feed-3:w-[360px]',
+  compact: 'w-[42%] min-w-[112px] max-w-[168px] shrink-0 xs:w-[168px] xs:max-w-none',
 };
 
 /** Carte vidéo : miniature, aperçu au survol, métadonnées et menu contextuel. */
@@ -251,6 +261,11 @@ export function VideoCard({
           {...triggerProps}
           aria-label="Plus d'actions"
           size="sm"
+          // `halo` et pas `grow` : en `list`/`compact` sur téléphone, la
+          // colonne de texte fait déjà à peine 190 px. Élargir le bouton à
+          // 44 px lui en prendrait 12 de plus ; le pseudo-élément donne la
+          // même zone tactile sans rien décaler.
+          touchTarget="halo"
           className="-mr-1"
         >
           <MoreVertical size={18} />
@@ -265,8 +280,10 @@ export function VideoCard({
       onClick={() => onClick?.(video)}
       title={video.title}
       className={cn(
-        'kt-clamp-2 rounded font-medium text-fg kt-focus-ring',
-        layout === 'list' ? 'text-kt-lg leading-7' : 'text-kt-md',
+        'kt-clamp-2 break-words rounded font-medium text-fg kt-focus-ring',
+        // 20 px de titre sur une colonne de ~190 px ne tiendrait pas en
+        // 2 lignes : on garde la taille « recherche » à partir de 480 px.
+        layout === 'list' ? 'text-kt-base xs:text-kt-lg xs:leading-7' : 'text-kt-md',
       )}
     >
       {video.title}
@@ -284,7 +301,9 @@ export function VideoCard({
   ) : null;
 
   const stats = (
-    <p className="flex flex-wrap items-center gap-x-1 text-kt-sm text-fg-muted">
+    // `flex-wrap` + `min-w-0` : « 1,2 M de vues • il y a 3 heures » repasse à
+    // la ligne au lieu de pousser la carte au-delà du viewport.
+    <p className="flex min-w-0 flex-wrap items-center gap-x-1 text-kt-sm text-fg-muted">
       {/* La miniature est masquée aux lecteurs d'écran : la durée est restituée ici */}
       {video.durationSec > 0 ? (
         <span className="sr-only">Durée : {formatDuration(video.durationSec)}. </span>
@@ -351,7 +370,9 @@ export function VideoCard({
       onPointerLeave={cancelPreview}
       className={cn(
         'group/card flex w-full',
-        isList ? 'gap-4' : 'gap-2',
+        // Gouttière réduite sous 480 px : 16 px entre miniature et texte,
+        // c'est 5 % de la largeur d'un iPhone SE.
+        isList ? 'gap-2 xs:gap-4' : 'gap-2',
         className,
       )}
     >
@@ -370,7 +391,7 @@ export function VideoCard({
                 href={watchHref}
                 onClick={() => onClick?.(video)}
                 title={video.title}
-                className="kt-clamp-2 rounded text-kt-base font-medium text-fg kt-focus-ring"
+                className="kt-clamp-2 break-words rounded text-kt-base font-medium text-fg kt-focus-ring"
               >
                 {video.title}
               </Link>

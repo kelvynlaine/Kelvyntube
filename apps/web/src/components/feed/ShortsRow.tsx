@@ -53,7 +53,13 @@ export function ShortsRow({
         </Link>
       </header>
 
-      <ul className="kt-no-scrollbar -mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto scroll-smooth px-1 pb-1">
+      {/*
+        Sur mobile la rangée défile d'un bord à l'autre de l'écran : les marges
+        négatives annulent la gouttière d'`AppShell`, si bien que la dernière
+        carte visible est coupée par le bord (indice de défilement) plutôt que
+        par un blanc de 16 px qui laissait croire à la fin de la liste.
+      */}
+      <ul className="kt-no-scrollbar -mx-4 flex snap-x snap-proximity gap-3 overflow-x-auto scroll-smooth px-4 pb-1 feed-3:-mx-1 feed-3:px-1">
         {videos.map((video) => (
           <ShortsRowCard
             key={video.id}

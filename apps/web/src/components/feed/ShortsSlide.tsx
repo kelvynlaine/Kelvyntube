@@ -195,8 +195,12 @@ export function ShortsSlide({
 
   return (
     <div className="relative flex h-full w-full items-center justify-center bg-black">
-      {/* Même cadre 9:16 que `ShortsPlayer` : les surcouches restent alignées */}
-      <div className="relative h-full w-full max-w-[calc(100vh*9/16)]">
+      {/*
+        Même cadre 9:16 que `ShortsPlayer` : les surcouches restent alignées.
+        `dvh` plutôt que `vh` : sur mobile la barre d'URL fait varier la
+        hauteur réelle, et `100vh` laisserait un cadre plus haut que l'écran.
+      */}
+      <div className="relative h-full w-full max-w-[calc(100dvh*9/16)]">
         {showPlayer && detail ? (
           // `ShortsPlayer` occupe déjà toute la boîte (`h-full w-full`) :
           // le positionnement absolu entrerait en conflit avec son `relative`.
@@ -232,8 +236,12 @@ export function ShortsSlide({
         {/* Surcouches limitées à la fenêtre de montage (précédent/courant/suivant) */}
         {mounted ? (
           <>
-            {/* ── Rail d'actions (droite) ─────────────────────────────────────── */}
-            <div className="pointer-events-none absolute bottom-6 right-2 z-30 flex flex-col items-center gap-4">
+            {/*
+              ── Rail d'actions (droite) ───────────────────────────────────
+              Le bas du rail est relevé de la safe-area iOS : sinon les
+              dernières actions tombent derrière la barre d'accueil.
+            */}
+            <div className="pointer-events-none absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-2 z-30 flex flex-col items-center gap-4">
               <div className="pointer-events-auto flex flex-col items-center gap-2">
                 <ChannelAvatar
                   channel={video.channel}
@@ -273,7 +281,12 @@ export function ShortsSlide({
                 disabled={likeMutation.isPending}
                 onLike={() => toggleLike('LIKE')}
                 onDislike={() => toggleLike('DISLIKE')}
-                className="pointer-events-auto flex-col rounded-kt bg-bg-elevated/85 backdrop-blur"
+                /*
+                 * En colonne, les deux boutons `size="sm"` du DS ne font que
+                 * 32 px de haut : au doigt (et au doigt seulement, pour ne pas
+                 * alourdir le rail sur desktop) on les porte à 44 px.
+                 */
+                className="pointer-events-auto flex-col rounded-kt bg-bg-elevated/85 backdrop-blur [@media(pointer:coarse)]:[&>button]:min-h-11 [@media(pointer:coarse)]:[&>button]:min-w-11"
               />
 
               <RailAction
@@ -323,7 +336,8 @@ export function ShortsSlide({
             </div>
 
             {/* ── Métadonnées (bas de l'écran) ───────────────────────────────── */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-1 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-8 pr-20 pt-16">
+            {/* `pr-20` réserve la largeur du rail ; le bas suit la safe-area iOS. */}
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex flex-col gap-1 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pr-20 pt-16">
               <Link
                 href={PATHS.channel(video.channel.handle)}
                 className="pointer-events-auto w-fit rounded text-kt-base font-medium text-white kt-focus-ring hover:underline"
@@ -385,6 +399,7 @@ function RailAction({ label, icon, count, onClick, className }: RailActionProps)
     <div
       className={cn('pointer-events-auto flex flex-col items-center gap-1', className)}
     >
+      {/* `IconButton` porte déjà sa boîte à 44 px sur pointeur grossier. */}
       <IconButton aria-label={label} variant="overlay" size="md" onClick={onClick}>
         {icon}
       </IconButton>

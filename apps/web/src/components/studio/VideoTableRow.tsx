@@ -1,42 +1,20 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { BarChart3, Download, ExternalLink, MoreVertical, Pencil, Trash2 } from 'lucide-react';
-import {
-  ROUTES,
-  formatDuration,
-  type StudioVideoRowDTO,
-  type VideoDetailDTO,
-  type VideoVisibility,
-} from '@kelvyntube/shared';
-import { Badge, Checkbox, DropdownMenu, Select, Tooltip, useToast } from '@kelvyntube/ui';
-import { api } from '@/lib/api';
+import { formatDuration, type StudioVideoRowDTO } from '@kelvyntube/shared';
+import { Checkbox, Tooltip, useToast } from '@kelvyntube/ui';
 import { PATHS } from '@/lib/nav';
 import { LikeRatio, StudioThumbnail } from './bits';
 import { VideoProcessingStatus } from './VideoProcessingStatus';
-import { VISIBILITY_LABELS, type StudioVideoRowExtraDTO } from './studio-api';
+import { type StudioVideoRowExtraDTO } from './studio-api';
+import { formatNumber, formatRatioAsPercent, truncate } from './studio-format';
 import {
-  formatDateTime,
-  formatNumber,
-  formatRatioAsPercent,
-  formatShortDate,
-  truncate,
-} from './studio-format';
-
-/**
- * « Programmée » est présente mais désactivée : le passage en programmé exige
- * une date, donc il se fait depuis la page de détail, pas depuis le tableau.
- */
-const VISIBILITY_OPTIONS = [
-  ...(['PUBLIC', 'UNLISTED', 'PRIVATE'] as const).map((value) => ({
-    value,
-    label: VISIBILITY_LABELS[value],
-  })),
-  { value: 'SCHEDULED', label: VISIBILITY_LABELS.SCHEDULED, disabled: true },
-];
+  VideoActionsMenu,
+  VisibilitySelect,
+  useVideoPatch,
+  videoDateInfo,
+} from './video-row-actions';
 
 export interface VideoTableRowProps {
   video: StudioVideoRowDTO & StudioVideoRowExtraDTO;
@@ -48,7 +26,11 @@ export interface VideoTableRowProps {
   onChanged: () => void;
 }
 
-/** Une ligne du tableau de gestion des vidéos. */
+/**
+ * Une ligne du tableau de gestion des vidéos — rendu DESKTOP uniquement.
+ * Sous `feed-3` (900 px), `VideosScreen` bascule sur `VideoListCard` : un
+ * tableau de 9 colonnes n'a aucun sens sur 390 px de large.
+ */
 export function VideoTableRow({
   video,
   channelId,
@@ -58,8 +40,6 @@ export function VideoTableRow({
   onChanged,
 }: VideoTableRowProps) {
   const { toast } = useToast();
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(video.title);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
@@ -72,15 +52,7 @@ export function VideoTableRow({
     if (editingTitle) titleInputRef.current?.select();
   }, [editingTitle]);
 
-  const patchMutation = useMutation({
-    mutationFn: (body: { title?: string; visibility?: VideoVisibility }) =>
-      api.patch<VideoDetailDTO>(ROUTES.videos.update(video.id), body),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['studio'] });
-      onChanged();
-    },
-    onError: (error: Error) => toast({ message: error.message, variant: 'error' }),
-  });
+  const patchMutation = useVideoPatch(video.id, onChanged);
 
   const commitTitle = () => {
     const next = titleDraft.trim();
@@ -93,35 +65,8 @@ export function VideoTableRow({
     toast({ message: 'Titre mis à jour.', variant: 'success' });
   };
 
-  /** Téléchargement : l'URL du fichier n'est pas dans la ligne, on va la chercher. */
-  const download = async () => {
-    try {
-      const detail = await api.get<VideoDetailDTO>(ROUTES.videos.byId(video.id));
-      const url = detail.mp4FallbackUrl ?? detail.hlsMasterUrl;
-      if (!url) {
-        toast({
-          message: 'Aucun fichier téléchargeable : la vidéo est encore en traitement.',
-          variant: 'info',
-        });
-        return;
-      }
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } catch {
-      toast({ message: 'Téléchargement impossible pour le moment.', variant: 'error' });
-    }
-  };
-
   const editHref = PATHS.studioVideo(channelId, video.id);
-  const dateLabel = video.publishedAt
-    ? formatShortDate(video.publishedAt)
-    : video.publishAt
-      ? formatDateTime(video.publishAt)
-      : formatShortDate(video.createdAt);
-  const dateHint = video.publishedAt
-    ? 'Publiée'
-    : video.publishAt
-      ? 'Publication prévue'
-      : 'Créée';
+  const date = videoDateInfo(video);
 
   return (
     <tr className="border-b border-border align-top transition-colors hover:bg-bg-hover/50">
@@ -208,28 +153,18 @@ export function VideoTableRow({
 
       {/* ── Visibilité ────────────────────────────────────────────────── */}
       <td className="px-2 py-3">
-        <Select
-          selectSize="sm"
-          value={video.visibility}
-          disabled={patchMutation.isPending || video.status !== 'READY'}
-          aria-label={`Visibilité de « ${video.title} »`}
-          options={VISIBILITY_OPTIONS}
-          onChange={(event) =>
-            patchMutation.mutate({ visibility: event.target.value as VideoVisibility })
-          }
+        <VisibilitySelect
+          video={video}
+          disabled={patchMutation.isPending}
+          onChange={(visibility) => patchMutation.mutate({ visibility })}
           containerClassName="w-40"
         />
-        {video.visibility === 'SCHEDULED' && video.publishAt ? (
-          <Badge className="mt-1.5" variant="new">
-            Programmée · {formatDateTime(video.publishAt)}
-          </Badge>
-        ) : null}
       </td>
 
       {/* ── Métriques ─────────────────────────────────────────────────── */}
       <td className="whitespace-nowrap px-2 py-3 text-kt-sm text-fg-muted">
-        <span className="block text-fg">{dateLabel}</span>
-        <span className="block text-fg-subtle">{dateHint}</span>
+        <span className="block text-fg">{date.label}</span>
+        <span className="block text-fg-subtle">{date.hint}</span>
       </td>
       <td className="px-2 py-3 text-right tabular-nums text-fg">
         {formatNumber(video.viewCount)}
@@ -249,47 +184,10 @@ export function VideoTableRow({
 
       {/* ── Actions ───────────────────────────────────────────────────── */}
       <td className="px-2 py-3">
-        <DropdownMenu
-          align="end"
-          label={`Actions pour « ${video.title} »`}
-          triggerLabel={`Actions pour « ${video.title} »`}
-          triggerClassName="size-9 text-fg hover:bg-bg-hover"
-          trigger={<MoreVertical size={18} aria-hidden="true" />}
-          items={[
-            {
-              id: 'edit',
-              label: 'Modifier',
-              icon: <Pencil size={16} aria-hidden="true" />,
-              onSelect: () => router.push(editHref),
-            },
-            {
-              id: 'watch',
-              label: 'Voir sur Kelvyn Tube',
-              icon: <ExternalLink size={16} aria-hidden="true" />,
-              disabled: video.status !== 'READY',
-              onSelect: () => window.open(PATHS.watch(video.id), '_blank', 'noopener,noreferrer'),
-            },
-            {
-              id: 'analytics',
-              label: 'Analytics',
-              icon: <BarChart3 size={16} aria-hidden="true" />,
-              onSelect: () => router.push(`${editHref}?tab=analytics`),
-            },
-            {
-              id: 'download',
-              label: 'Télécharger',
-              icon: <Download size={16} aria-hidden="true" />,
-              onSelect: () => void download(),
-            },
-            { id: 'sep', separator: true },
-            {
-              id: 'delete',
-              label: 'Supprimer définitivement',
-              icon: <Trash2 size={16} aria-hidden="true" />,
-              danger: true,
-              onSelect: () => onRequestDelete(video),
-            },
-          ]}
+        <VideoActionsMenu
+          video={video}
+          channelId={channelId}
+          onRequestDelete={onRequestDelete}
         />
       </td>
     </tr>

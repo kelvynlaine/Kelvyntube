@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { cn } from '../cn';
+import { useMediaQuery } from '../hooks/useMediaPreferences';
 import { resolveLinkComponent, type LinkComponent } from '../types';
 import { Avatar } from './Avatar';
 import { Button } from './Button';
@@ -75,6 +76,15 @@ export function TopBar({
 
   const value = searchValue ?? internalValue;
 
+  /**
+   * `feed-3` (900 px) est le seuil au-dessus duquel la recherche est intégrée
+   * à la barre. Le mode plein écran porte `feed-3:hidden` : s'il restait actif
+   * après une rotation ou un redimensionnement, l'en-tête disparaîtrait
+   * complètement sur grand écran. On le referme donc dès qu'on franchit le
+   * seuil.
+   */
+  const isWideViewport = useMediaQuery('(min-width: 900px)');
+
   const setValue = (next: string) => {
     if (searchValue === undefined) setInternalValue(next);
     onSearchChange?.(next);
@@ -84,6 +94,10 @@ export function TopBar({
   useEffect(() => {
     if (mobileSearchOpen) inputRef.current?.focus();
   }, [mobileSearchOpen]);
+
+  useEffect(() => {
+    if (isWideViewport) setMobileSearchOpen(false);
+  }, [isWideViewport]);
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -108,23 +122,31 @@ export function TopBar({
           value={value}
           placeholder={searchPlaceholder}
           onChange={(event) => setValue(event.target.value)}
-          className="h-10 min-w-0 flex-1 rounded-l-pill bg-transparent px-4 text-kt-md text-fg outline-none placeholder:text-fg-subtle"
+          // `text-kt-md` = 16 px : en dessous, iOS zoome automatiquement sur le
+          // champ au focus et casse la mise en page. Ne pas descendre.
+          className="h-10 min-w-0 flex-1 rounded-l-pill bg-transparent px-4 text-kt-md text-fg outline-none kt-tap-y placeholder:text-fg-subtle"
         />
         <button
           type="submit"
           aria-label="Lancer la recherche"
-          className="flex h-10 w-16 shrink-0 items-center justify-center rounded-r-pill border-l border-border bg-bg-elevated text-fg transition-colors hover:bg-bg-hover kt-focus-ring"
+          // Bouton plus étroit sous 480 px : 64 px de loupe sur un écran de
+          // 320 px, c'est 20 % de la largeur pris à la saisie.
+          className="flex h-10 w-12 shrink-0 items-center justify-center rounded-r-pill border-l border-border bg-bg-elevated text-fg transition-colors hover:bg-bg-hover kt-focus-ring kt-tap-y xs:w-16"
         >
           <Search size={20} aria-hidden="true" />
         </button>
       </div>
 
       {onVoiceSearch ? (
+        // Masqué sous 360 px : à cette largeur le champ de saisie doit primer
+        // sur une action secondaire (la recherche vocale reste accessible
+        // depuis le clavier système).
         <IconButton
           aria-label="Recherche vocale"
           tooltip="Recherche vocale"
           variant="solid"
           onClick={onVoiceSearch}
+          className="hidden xxs:inline-flex"
         >
           <Mic size={20} />
         </IconButton>
@@ -143,7 +165,10 @@ export function TopBar({
     return (
       <header
         className={cn(
-          'sticky top-0 z-40 flex h-topbar items-center gap-2 bg-bg px-2 feed-3:hidden',
+          // `w-full` + `min-w-0` sur le formulaire : la recherche plein écran
+          // doit occuper toute la largeur, retour compris, sans jamais
+          // provoquer de débordement horizontal à 320 px.
+          'sticky top-0 z-40 flex h-topbar w-full items-center gap-1 bg-bg px-1 xs:gap-2 xs:px-2 feed-3:hidden',
           className,
         )}
       >
@@ -153,7 +178,7 @@ export function TopBar({
         >
           <ArrowLeft size={22} />
         </IconButton>
-        {searchForm}
+        <div className="min-w-0 flex-1">{searchForm}</div>
       </header>
     );
   }
@@ -165,8 +190,9 @@ export function TopBar({
         className,
       )}
     >
-      {/* Gauche : menu + logo */}
-      <div className="flex shrink-0 items-center gap-1">
+      {/* Gauche : menu + logo — autorisé à rétrécir pour ne jamais pousser
+          les actions de droite hors de l'écran à 320 px. */}
+      <div className="flex min-w-0 items-center gap-1">
         {onToggleSidebar ? (
           <IconButton aria-label="Menu principal" onClick={onToggleSidebar}>
             <Menu size={22} />
@@ -175,9 +201,12 @@ export function TopBar({
         <Link
           href={homeHref}
           aria-label="Accueil Kelvyn Tube"
-          className="ml-1 rounded kt-focus-ring"
+          className="min-w-0 overflow-hidden rounded xs:ml-1 kt-focus-ring"
         >
-          <KelvynLogo />
+          {/* Sous 360 px, seul le symbole reste : le mot-symbole complet fait
+              ~110 px, soit un tiers de l'écran. */}
+          <KelvynLogo withWordmark={false} title="" className="xxs:hidden" />
+          <KelvynLogo title="" className="hidden xxs:inline-flex" />
         </Link>
       </div>
 
@@ -185,7 +214,7 @@ export function TopBar({
       <div className="mx-4 hidden max-w-2xl flex-1 feed-3:flex">{searchForm}</div>
 
       {/* Droite : actions */}
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="flex shrink-0 items-center gap-0.5 xs:gap-1">
         <IconButton
           aria-label="Rechercher"
           onClick={() => setMobileSearchOpen(true)}
@@ -235,7 +264,11 @@ export function TopBar({
             type="button"
             aria-label={`Compte : ${user.displayName}`}
             onClick={onAvatarClick}
-            className="ml-1 rounded-full kt-focus-ring"
+            // `inline-flex items-center justify-center` : le bouton mesurait
+            // 32 × 37 px (l'avatar `inline` traînait une demi-interligne).
+            // La boîte est maintenant carrée, et `kt-tap` la porte à 44 px au
+            // doigt sans grossir l'avatar lui-même, qui reste à 32 px.
+            className="ml-1 inline-flex shrink-0 items-center justify-center rounded-full kt-focus-ring kt-tap"
           >
             <Avatar name={user.displayName} src={user.avatarUrl} size="sm" />
           </button>
@@ -244,7 +277,7 @@ export function TopBar({
             variant="outline"
             size="sm"
             onClick={onSignIn}
-            className="ml-1 text-accent-fg"
+            className="ml-1 whitespace-nowrap text-accent-fg"
           >
             Se connecter
           </Button>

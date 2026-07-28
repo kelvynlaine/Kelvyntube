@@ -262,8 +262,8 @@ export function ShortsPlayer({
         className,
       )}
     >
-      {/* Cadre 9:16 centré */}
-      <div className="relative h-full w-full max-w-[calc(100vh*9/16)] overflow-hidden bg-black sm:rounded-kt">
+      {/* Cadre 9:16 centré — `dvh` : la barre d'URL mobile fait varier la hauteur. */}
+      <div className="relative h-full w-full max-w-[calc(100dvh*9/16)] overflow-hidden bg-black sm:rounded-kt">
         <video
           ref={videoRef}
           className="absolute inset-0 h-full w-full object-cover"
@@ -321,7 +321,8 @@ export function ShortsPlayer({
             type="button"
             onClick={() => setMuted(false)}
             aria-label="Activer le son"
-            className="absolute left-1/2 top-4 z-30 flex h-11 -translate-x-1/2 items-center gap-2 rounded-pill bg-black/70 px-4 text-kt-base font-medium text-white backdrop-blur transition-opacity hover:opacity-90 kt-focus-ring"
+            // Décalé sous l'encoche iOS : le Short occupe toute la hauteur écran.
+            className="absolute left-1/2 top-[calc(1rem+env(safe-area-inset-top))] z-30 flex h-11 -translate-x-1/2 items-center gap-2 rounded-pill bg-black/70 px-4 text-kt-base font-medium text-white backdrop-blur transition-opacity hover:opacity-90 kt-focus-ring"
           >
             <VolumeX className="h-5 w-5" aria-hidden="true" />
             Activer le son
@@ -331,7 +332,8 @@ export function ShortsPlayer({
             type="button"
             onClick={() => setMuted(true)}
             aria-label="Couper le son"
-            className="absolute right-3 top-4 z-30 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur transition-opacity hover:opacity-90 kt-focus-ring"
+            // Idem : sous l'encoche iOS.
+            className="absolute right-3 top-[calc(1rem+env(safe-area-inset-top))] z-30 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur transition-opacity hover:opacity-90 kt-focus-ring"
           >
             <Volume2 className="h-5 w-5" aria-hidden="true" />
           </button>
@@ -369,7 +371,8 @@ export function ShortsPlayer({
           onPointerUp={onTrackPointerUp}
           onPointerCancel={onTrackPointerUp}
           onKeyDown={onTrackKeyDown}
-          className="absolute inset-x-0 bottom-0 z-30 h-4 cursor-pointer touch-none outline-none kt-focus-ring"
+          // Remontée au-dessus de la barre d'accueil iOS, sinon elle est intapable.
+          className="absolute inset-x-0 bottom-[env(safe-area-inset-bottom)] z-30 h-4 cursor-pointer touch-none outline-none kt-focus-ring"
         >
           <span className="absolute inset-x-0 bottom-[2px] h-[3px] bg-white/25" />
           <span

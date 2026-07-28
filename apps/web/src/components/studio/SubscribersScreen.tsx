@@ -37,7 +37,7 @@ export function SubscribersScreen() {
     return (
       <div className="flex flex-col gap-4">
         <Skeleton variant="rect" className="h-9 w-56 rounded-kt" />
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 feed-2:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} variant="rect" className="h-28 w-full rounded-kt" />
           ))}
@@ -54,7 +54,7 @@ export function SubscribersScreen() {
         title="Statistiques d'abonnés indisponibles"
         description="Impossible de charger ces données pour le moment."
         action={
-          <button type="button" className="kt-btn-secondary" onClick={() => void query.refetch()}>
+          <button type="button" className="kt-btn-secondary min-h-11" onClick={() => void query.refetch()}>
             Réessayer
           </button>
         }
@@ -100,6 +100,7 @@ export function SubscribersScreen() {
           formatValue={(v) => (v >= 0 ? `+${formatNumber(v)}` : `−${formatNumber(Math.abs(v))}`)}
           color={theme.success}
           height={280}
+          mobileHeight={200}
         />
       </Panel>
 
@@ -115,19 +116,31 @@ export function SubscribersScreen() {
             size="sm"
           />
         ) : (
-          <table className="w-full text-kt-base">
+          /*
+            Quatre colonnes numériques ne tiennent pas sur 320 px : « Gagnés »
+            et « Perdus » ne s'affichent qu'à partir de feed-2, le solde net
+            (la seule colonne indispensable) restant toujours visible.
+            `table-fixed` empêche le tableau de forcer la largeur du panneau.
+          */
+          <table className="w-full table-fixed text-kt-base">
             <thead>
               <tr className="border-b border-border text-left text-kt-sm text-fg-muted">
-                <th scope="col" className="px-4 py-2 font-medium">
+                <th scope="col" className="px-3 py-2 font-medium feed-2:px-4">
                   Vidéo
                 </th>
-                <th scope="col" className="px-4 py-2 text-right font-medium">
+                <th
+                  scope="col"
+                  className="hidden w-24 px-4 py-2 text-right font-medium feed-2:table-cell"
+                >
                   Gagnés
                 </th>
-                <th scope="col" className="px-4 py-2 text-right font-medium">
+                <th
+                  scope="col"
+                  className="hidden w-24 px-4 py-2 text-right font-medium feed-2:table-cell"
+                >
                   Perdus
                 </th>
-                <th scope="col" className="px-4 py-2 text-right font-medium">
+                <th scope="col" className="w-20 px-3 py-2 text-right font-medium feed-2:px-4">
                   Net
                 </th>
               </tr>
@@ -137,9 +150,12 @@ export function SubscribersScreen() {
                 const net = g - l;
                 return (
                   <tr key={video.id} className="border-b border-border last:border-0">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <StudioThumbnail url={video.thumbnailUrl} className="h-[45px] w-20" />
+                    <td className="px-3 py-3 feed-2:px-4">
+                      <div className="flex items-center gap-2 feed-2:gap-3">
+                        <StudioThumbnail
+                          url={video.thumbnailUrl}
+                          className="h-[45px] w-20 shrink-0"
+                        />
                         <Link
                           href={PATHS.studioVideo(channelId, video.id)}
                           className="kt-clamp-2 min-w-0 hover:underline"
@@ -148,14 +164,14 @@ export function SubscribersScreen() {
                         </Link>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-success">
+                    <td className="hidden px-4 py-3 text-right tabular-nums text-success feed-2:table-cell">
                       +{formatNumber(g)}
                     </td>
-                    <td className="px-4 py-3 text-right tabular-nums text-fg-muted">
+                    <td className="hidden px-4 py-3 text-right tabular-nums text-fg-muted feed-2:table-cell">
                       −{formatNumber(l)}
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-medium tabular-nums ${
+                      className={`px-3 py-3 text-right font-medium tabular-nums feed-2:px-4 ${
                         net >= 0 ? 'text-success' : 'text-danger'
                       }`}
                     >

@@ -81,7 +81,10 @@ export function ThumbnailPicker({
         aria-describedby={ids.describedBy}
         aria-invalid={error ? true : undefined}
         onKeyDown={onKeyDown}
-        className="grid grid-cols-2 gap-3 xs:grid-cols-4"
+        // 2 colonnes sous 480 px : à 360 px de viewport chaque vignette fait
+        // ~160 px de large (90 px de haut en 16/9), ce qui reste lisible.
+        // 4 colonnes y donneraient des vignettes de 75 px, inexploitables.
+        className="grid grid-cols-2 gap-2 xs:grid-cols-4 xs:gap-3"
       >
         {all.map((url, index) => {
           const selected = url === value;

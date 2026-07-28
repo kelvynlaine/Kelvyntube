@@ -46,7 +46,14 @@ export function FeedChips({
   return (
     <div
       className={cn(
-        'bg-bg py-3',
+        'bg-bg py-2 feed-3:py-3',
+        /*
+         * Sur mobile la rangée « saigne » jusqu'aux bords de l'écran (les
+         * marges négatives annulent la gouttière d'`AppShell`) : les pastilles
+         * défilent alors d'un bord à l'autre comme sur YouTube, et le fond
+         * collant couvre toute la largeur au défilement.
+         */
+        '-mx-4 px-4 feed-3:mx-0 feed-3:px-0',
         // La barre supérieure du shell est fixe : on s'y accroche juste dessous.
         sticky && 'sticky top-topbar z-20',
         className,

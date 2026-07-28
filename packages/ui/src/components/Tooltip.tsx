@@ -110,6 +110,11 @@ export function Tooltip({
           className={cn(
             'pointer-events-none absolute z-50 max-w-56 animate-fade-in whitespace-nowrap rounded px-2 py-1',
             'bg-bg-inverse text-kt-xs font-medium text-fg-inverse shadow-lg',
+            // Au doigt, `pointerenter` se déclenche au tap : l'infobulle
+            // s'afficherait et resterait affichée par-dessus le contenu sans
+            // qu'aucun « pointerleave » ne survienne. On la neutralise donc
+            // sur pointeur grossier — l'info reste portée par `aria-label`.
+            'kt-coarse-hidden',
             SIDES[side],
             contentClassName,
           )}

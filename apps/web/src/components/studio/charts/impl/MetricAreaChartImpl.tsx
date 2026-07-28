@@ -14,6 +14,7 @@ import {
   type TooltipProps,
 } from 'recharts';
 import { useChartTheme } from '../chart-theme';
+import { ChartFrame } from '../ChartFrame';
 import { formatAxisDate, formatFullDate } from '../../studio-format';
 import { ChartTooltipCard } from './ChartTooltipCard';
 
@@ -25,7 +26,10 @@ export interface MetricAreaChartProps {
   seriesName: string;
   /** Formatage de la valeur dans l'infobulle. */
   formatValue: (value: number) => string;
+  /** Hauteur en desktop (à partir de feed-3). */
   height?: number;
+  /** Hauteur en mobile — un graphique de 300 px mange tout l'écran d'un iPhone. */
+  mobileHeight?: number;
 }
 
 /**
@@ -38,6 +42,7 @@ export function MetricAreaChartImpl({
   seriesName,
   formatValue,
   height = 300,
+  mobileHeight = 200,
 }: MetricAreaChartProps) {
   const theme = useChartTheme();
   const gradientId = `kt-area-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
@@ -56,13 +61,12 @@ export function MetricAreaChartImpl({
   };
 
   return (
-    <div
-      role="img"
-      aria-label={`Évolution de la métrique « ${seriesName} » sur la période sélectionnée`}
-      style={{ height }}
-      className="w-full"
+    <ChartFrame
+      height={height}
+      mobileHeight={mobileHeight}
+      label={`Évolution de la métrique « ${seriesName} » sur la période sélectionnée`}
     >
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <AreaChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -73,25 +77,34 @@ export function MetricAreaChartImpl({
 
           <CartesianGrid stroke={theme.grid} strokeDasharray="3 3" vertical={false} />
 
+          {/*
+            `minTickGap` généreux : sur 320 px de large, des dates tous les
+            32 px se chevauchent et deviennent illisibles.
+          */}
           <XAxis
             dataKey="date"
             tickFormatter={formatAxisDate}
             tick={{ fill: theme.axis, fontSize: 11 }}
             tickLine={false}
             axisLine={{ stroke: theme.grid }}
-            minTickGap={32}
+            minTickGap={48}
           />
           <YAxis
             tickFormatter={(value: number) => formatCompactNumber(value)}
             tick={{ fill: theme.axis, fontSize: 11 }}
             tickLine={false}
             axisLine={false}
-            width={48}
+            width={44}
           />
 
+          {/*
+            `trigger="click"` n'existe pas ici : on garde le survol, mais un
+            `activeDot` large donne une cible confortable au doigt sur tactile.
+          */}
           <Tooltip
             content={renderTooltip}
             cursor={{ stroke: theme.axis, strokeDasharray: '3 3' }}
+            wrapperStyle={{ zIndex: 10, outline: 'none' }}
           />
 
           <Area
@@ -102,11 +115,11 @@ export function MetricAreaChartImpl({
             strokeWidth={2}
             fill={`url(#${gradientId})`}
             dot={false}
-            activeDot={{ r: 4, strokeWidth: 0 }}
+            activeDot={{ r: 6, strokeWidth: 0 }}
             isAnimationActive={false}
           />
         </AreaChart>
       </ResponsiveContainer>
-    </div>
+    </ChartFrame>
   );
 }

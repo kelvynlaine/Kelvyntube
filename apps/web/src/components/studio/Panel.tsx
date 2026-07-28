@@ -35,18 +35,35 @@ export function Panel({
       )}
     >
       {title || actions ? (
-        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3">
+        <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-3 py-3 feed-2:px-4">
           <div className="min-w-0">
             <Heading className="text-kt-md font-medium text-fg">{title}</Heading>
             {description ? (
               <p className="mt-0.5 text-kt-sm text-fg-muted">{description}</p>
             ) : null}
           </div>
-          {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+          {/*
+            Les actions ne sont PLUS `shrink-0` : sur un écran de 390 px une
+            rangée de chips (« Vues / Temps de visionnage / Abonnés… ») refusait
+            de rétrécir et débordait de la page entière. `min-w-0` + `w-full`
+            en dessous de feed-2 les laisse passer à la ligne dans leur propre
+            conteneur au lieu de pousser la carte.
+          */}
+          {actions ? (
+            <div className="flex w-full min-w-0 flex-wrap items-center gap-2 feed-2:w-auto feed-2:justify-end">
+              {actions}
+            </div>
+          ) : null}
         </header>
       ) : null}
 
-      <div className={cn('p-4', bodyClassName)}>{children}</div>
+      {/*
+        Padding réduit en mobile : chaque pixel de largeur compte à 320 px.
+        `bodyClassName` REMPLACE le padding par défaut (au lieu de s'y ajouter) :
+        un `p-0` ne pourrait pas neutraliser un `feed-2:p-4` par simple fusion
+        de classes, les appelants pilotent donc leur padding de bout en bout.
+      */}
+      <div className={bodyClassName ? cn(bodyClassName) : 'p-3 feed-2:p-4'}>{children}</div>
     </section>
   );
 }

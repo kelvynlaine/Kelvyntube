@@ -1,7 +1,7 @@
 'use client';
 
 import { CalendarRange } from 'lucide-react';
-import { Select } from '@kelvyntube/ui';
+import { Select, cn } from '@kelvyntube/ui';
 import { ANALYTICS_PRESETS, type AnalyticsPreset } from './studio-api';
 import { useStudioUrlState } from './useStudioUrlState';
 
@@ -19,7 +19,7 @@ export function RangeSelect({
   const { setQuery } = useStudioUrlState();
 
   return (
-    <div className={className}>
+    <div className={cn('w-full feed-2:w-auto', className)}>
       <Select
         label={
           <span className="flex items-center gap-1.5">
@@ -34,7 +34,10 @@ export function RangeSelect({
           value: preset.value,
           label: preset.label,
         }))}
-        containerClassName="w-[13.5rem]"
+        // `selectSize="sm"` = 32 px : trop bas pour le doigt. On force 44 px
+        // jusqu'à feed-2, où la souris reprend la main et où la densité prime.
+        className="h-11 text-kt-base feed-2:h-8 feed-2:text-kt-sm"
+        containerClassName="w-full feed-2:w-[13.5rem]"
       />
     </div>
   );

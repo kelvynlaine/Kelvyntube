@@ -138,9 +138,10 @@ export function CommentsModerationScreen() {
           placeholder="Rechercher dans les commentaires"
           iconLeft={<Search size={18} />}
           aria-label="Rechercher dans les commentaires"
-          containerClassName="max-w-md flex-1"
+          className="h-11 feed-3:h-10"
+          containerClassName="min-w-0 max-w-md flex-1"
         />
-        <Button type="submit" variant="secondary">
+        <Button type="submit" variant="secondary" className="h-11 feed-3:h-9">
           Rechercher
         </Button>
       </form>
@@ -202,10 +203,13 @@ export function CommentsModerationScreen() {
                       {comment.text}
                     </p>
 
+                    {/* Barre de modération : 44 px au doigt, densité d'origine
+                        à partir de feed-3 (souris). */}
                     <div className="mt-2 flex flex-wrap items-center gap-1">
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="h-11 text-kt-base feed-3:h-8 feed-3:text-kt-sm"
                         iconLeft={<Send size={15} />}
                         onClick={() => {
                           setReplyTo(comment);
@@ -217,6 +221,7 @@ export function CommentsModerationScreen() {
                       <IconButton
                         aria-label={comment.pinned ? 'Désépingler' : 'Épingler'}
                         size="sm"
+                        className="size-11 feed-3:size-8"
                         active={comment.pinned}
                         onClick={() => pin.mutate(comment.id)}
                       >
@@ -225,6 +230,7 @@ export function CommentsModerationScreen() {
                       <IconButton
                         aria-label={comment.heartedByCreator ? 'Retirer le cœur' : 'Aimer'}
                         size="sm"
+                        className="size-11 feed-3:size-8"
                         active={comment.heartedByCreator}
                         onClick={() => heart.mutate(comment.id)}
                       >
@@ -233,6 +239,7 @@ export function CommentsModerationScreen() {
                       <IconButton
                         aria-label="Supprimer le commentaire"
                         size="sm"
+                        className="size-11 feed-3:size-8"
                         onClick={() => setToDelete(comment)}
                       >
                         <Trash2 size={16} />
@@ -264,6 +271,7 @@ export function CommentsModerationScreen() {
           <Button
             variant="secondary"
             size="sm"
+            className="h-11 feed-3:h-8"
             disabled={page <= 1}
             onClick={() => setQuery({ page: page - 1 })}
           >
@@ -275,6 +283,7 @@ export function CommentsModerationScreen() {
           <Button
             variant="secondary"
             size="sm"
+            className="h-11 feed-3:h-8"
             disabled={page >= totalPages}
             onClick={() => setQuery({ page: page + 1 })}
           >

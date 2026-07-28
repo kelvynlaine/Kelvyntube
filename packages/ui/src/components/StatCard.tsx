@@ -71,26 +71,36 @@ export function StatCard({
     <Wrapper
       {...(onClick ? { type: 'button' as const, onClick } : {})}
       className={cn(
-        'flex flex-col gap-2 rounded-kt border border-border bg-bg-elevated p-4 text-left',
+        'flex min-w-0 flex-col gap-2 rounded-kt border border-border bg-bg-elevated p-3 text-left xs:p-4',
         onClick && 'transition-colors hover:bg-bg-hover kt-focus-ring',
         className,
       )}
     >
+      {/*
+        `min-w-0` + `truncate` : une StatCard fait ~150 px de large dans une
+        grille à 2 colonnes sur téléphone. Sans ça, un libellé comme
+        « Durée de visionnage moyenne » élargit la carte et fait déborder
+        toute la grille horizontalement.
+      */}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-kt-sm text-fg-muted">{label}</span>
+        <span className="min-w-0 truncate text-kt-sm text-fg-muted" title={typeof label === 'string' ? label : undefined}>
+          {label}
+        </span>
         {icon ? (
-          <span aria-hidden="true" className="text-fg-subtle">
+          <span aria-hidden="true" className="shrink-0 text-fg-subtle">
             {icon}
           </span>
         ) : null}
       </div>
 
-      <p className="text-kt-xl font-medium tabular-nums text-fg">{value}</p>
+      <p className="break-words text-kt-lg font-medium tabular-nums text-fg xs:text-kt-xl">
+        {value}
+      </p>
 
       {hasDelta ? (
         <p
           className={cn(
-            'flex items-center gap-1 text-kt-sm tabular-nums',
+            'flex flex-wrap items-center gap-x-1 text-kt-sm tabular-nums',
             neutral ? 'text-fg-muted' : favorable ? 'text-success' : 'text-danger',
           )}
         >

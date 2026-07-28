@@ -53,6 +53,7 @@ export const PATHS = {
   studioAnalytics: (channelId: string) => `/studio/${channelId}/analytics`,
   studioComments: (channelId: string) => `/studio/${channelId}/commentaires`,
   studioSubscribers: (channelId: string) => `/studio/${channelId}/abonnes`,
+  studioBoost: (channelId: string) => `/studio/${channelId}/booster`,
   studioCustomize: (channelId: string) => `/studio/${channelId}/personnalisation`,
   studioUpload: (channelId: string) => `/studio/${channelId}/upload`,
 

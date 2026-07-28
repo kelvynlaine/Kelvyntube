@@ -29,9 +29,14 @@ const VARIANTS: Record<ButtonVariant, string> = {
     'inline-flex items-center justify-center gap-2 rounded-pill border border-border-strong bg-transparent font-medium text-fg transition-colors hover:bg-bg-hover disabled:opacity-50 kt-focus-ring',
 };
 
+/**
+ * `kt-tap-y` ne s'active que sur pointeur grossier : `sm` (32 px) et `md`
+ * (36 px) passent alors à 44 px de haut. La largeur reste dictée par le texte,
+ * donc rien ne bouge horizontalement. `lg` fait déjà 44 px.
+ */
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-8 px-3 py-0 text-kt-sm',
-  md: 'h-9 px-4 py-0 text-kt-base',
+  sm: 'h-8 px-3 py-0 text-kt-sm kt-tap-y',
+  md: 'h-9 px-4 py-0 text-kt-base kt-tap-y',
   lg: 'h-11 px-6 py-0 text-kt-md',
 };
 

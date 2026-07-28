@@ -141,7 +141,7 @@ export function OverviewScreen() {
     <div className="flex flex-col gap-6">
       {/* ── En-tête de période ─────────────────────────────────────────── */}
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h2 className="text-kt-lg font-medium text-fg">Vue d&apos;ensemble</h2>
           {overview ? (
             <p className="text-kt-sm text-fg-muted">
@@ -154,7 +154,7 @@ export function OverviewScreen() {
 
       {/* ── Rangée de métriques ────────────────────────────────────────── */}
       {overviewQuery.isPending ? (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 xs:grid-cols-2 feed-3:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 7 }).map((_, index) => (
             <Skeleton key={index} variant="rect" className="h-36 w-full rounded-kt" />
           ))}
@@ -167,7 +167,7 @@ export function OverviewScreen() {
         />
       ) : (
         <>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-3 xs:grid-cols-2 feed-3:grid-cols-3 xl:grid-cols-4">
             <StatCard
               label="Vues"
               value={formatNumber(overview.totals.views)}
@@ -225,13 +225,21 @@ export function OverviewScreen() {
           {/* ── Grand graphique ─────────────────────────────────────────── */}
           <Panel
             title="Évolution"
+            // `min-w-0` : sans lui, ce groupe refusait de rétrécir et débordait
+            // de la page à 390 px ; les chips passent désormais à la ligne.
+            // `min-h-11` : `.kt-chip` ne fait que 32 px de haut, trop peu au doigt.
             actions={
-              <div role="group" aria-label="Métrique affichée" className="flex flex-wrap gap-2">
+              <div
+                role="group"
+                aria-label="Métrique affichée"
+                className="flex min-w-0 flex-wrap gap-2"
+              >
                 {METRICS.map((item) => (
                   <Chip
                     key={item.key}
                     active={item.key === metric}
                     aria-pressed={item.key === metric}
+                    className="min-h-11 feed-3:min-h-0"
                     onClick={() => setQuery({ metric: item.key })}
                   >
                     {item.label}
@@ -256,7 +264,10 @@ export function OverviewScreen() {
         </>
       )}
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_22rem]">
+      {/* `min-w-0` sur les colonnes : un `1fr` de grille ne rétrécit pas
+          en dessous de son contenu sans lui — c'est la cause n° 1 des
+          débordements horizontaux dès qu'un tableau ou un SVG est dedans. */}
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_22rem]">
         {/* ── Top vidéos de la période ─────────────────────────────────── */}
         <Panel
           title="Top vidéos de la période"
@@ -274,20 +285,29 @@ export function OverviewScreen() {
               Aucune vue enregistrée sur cette période.
             </p>
           ) : (
-            <div className="kt-scroll overflow-x-auto">
-              <table className="w-full min-w-[34rem] border-collapse text-kt-base">
+            /*
+              Pas de `min-width` forcée : plutôt que d'imposer un scroll
+              horizontal imbriqué (pénible au doigt), on retire la colonne
+              « Heures de visionnage » sous feed-2 — la donnée principale
+              (les vues) reste visible sur 320 px.
+            */
+            <div className="w-full">
+              <table className="w-full table-fixed border-collapse text-kt-base">
                 <caption className="sr-only">
                   Vidéos les plus vues de la période, avec leur temps de visionnage
                 </caption>
                 <thead>
                   <tr className="border-b border-border text-left text-kt-sm text-fg-muted">
-                    <th scope="col" className="px-4 py-2 font-medium">
+                    <th scope="col" className="px-3 py-2 font-medium feed-2:px-4">
                       Vidéo
                     </th>
-                    <th scope="col" className="px-4 py-2 text-right font-medium">
+                    <th scope="col" className="w-20 px-3 py-2 text-right font-medium feed-2:px-4">
                       Vues
                     </th>
-                    <th scope="col" className="px-4 py-2 text-right font-medium">
+                    <th
+                      scope="col"
+                      className="hidden w-32 px-4 py-2 text-right font-medium feed-2:table-cell"
+                    >
                       Heures de visionnage
                     </th>
                   </tr>
@@ -295,10 +315,13 @@ export function OverviewScreen() {
                 <tbody>
                   {overview.topVideos.map((video) => (
                     <tr key={video.id} className="border-b border-border last:border-0">
-                      <th scope="row" className="max-w-0 px-4 py-2 text-left font-normal">
+                      <th
+                        scope="row"
+                        className="max-w-0 px-3 py-2 text-left font-normal feed-2:px-4"
+                      >
                         <Link
                           href={`${PATHS.studioVideo(channelId, video.id)}?tab=analytics`}
-                          className="flex items-center gap-3 rounded-kt kt-focus-ring"
+                          className="flex min-h-11 items-center gap-3 rounded-kt kt-focus-ring"
                         >
                           <span className="relative block h-9 w-16 shrink-0 overflow-hidden rounded bg-bg-hover">
                             {video.thumbnailUrl ? (
@@ -319,10 +342,10 @@ export function OverviewScreen() {
                           </span>
                         </Link>
                       </th>
-                      <td className="px-4 py-2 text-right tabular-nums text-fg">
+                      <td className="px-3 py-2 text-right tabular-nums text-fg feed-2:px-4">
                         {formatNumber(video.views)}
                       </td>
-                      <td className="px-4 py-2 text-right tabular-nums text-fg-muted">
+                      <td className="hidden px-4 py-2 text-right tabular-nums text-fg-muted feed-2:table-cell">
                         {formatHours(video.watchTimeHours)}
                       </td>
                     </tr>
@@ -333,7 +356,7 @@ export function OverviewScreen() {
           )}
         </Panel>
 
-        <div className="flex flex-col gap-4">
+        <div className="flex min-w-0 flex-col gap-4">
           {/* ── En temps réel ──────────────────────────────────────────── */}
           <Panel
             title={
@@ -394,7 +417,8 @@ export function OverviewScreen() {
             actions={
               <Link
                 href={PATHS.studioVideos(channelId)}
-                className="text-kt-sm font-medium text-accent-fg hover:underline kt-focus-ring"
+                // Lien d'action isolé : il doit être aussi cliquable qu'un bouton.
+                className="inline-flex min-h-11 items-center rounded-kt px-2 text-kt-sm font-medium text-accent-fg hover:underline kt-focus-ring feed-3:min-h-0 feed-3:px-0"
               >
                 Tout voir
               </Link>
@@ -418,7 +442,7 @@ export function OverviewScreen() {
                     <Link
                       href={PATHS.studioUpload(channelId)}
                       className={cn(
-                        'inline-flex h-9 items-center rounded-pill bg-brand px-4',
+                        'inline-flex h-11 items-center rounded-pill bg-brand px-4 feed-3:h-9',
                         'text-kt-base font-medium text-white hover:bg-brand-hover kt-focus-ring',
                       )}
                     >
@@ -432,9 +456,10 @@ export function OverviewScreen() {
                 {latestQuery.data.items.map((video) => (
                   <li key={video.id} className="border-b border-border last:border-0">
                     <div className="flex items-start gap-3 p-3">
+                      {/* 78×44 : ratio 16/9 conservé, mais cible tactile de 44 px. */}
                       <Link
                         href={PATHS.studioVideo(channelId, video.id)}
-                        className="relative block h-9 w-16 shrink-0 overflow-hidden rounded bg-bg-hover kt-focus-ring"
+                        className="relative block h-11 w-[78px] shrink-0 overflow-hidden rounded bg-bg-hover kt-focus-ring"
                         aria-label={`Modifier « ${video.title} »`}
                       >
                         {video.thumbnailUrl ? (

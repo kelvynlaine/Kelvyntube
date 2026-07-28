@@ -8,6 +8,16 @@ import { formatNumber, formatPercent } from './studio-format';
  * Petites briques partagées par les écrans du Studio.
  */
 
+/**
+ * Hauteur des champs de formulaire au doigt.
+ *
+ * La taille `md` du design system fait 40 px : confortable à la souris, quatre
+ * pixels sous la cible tactile recommandée. On la porte à 44 px tant que la
+ * mise en page est celle du mobile, et on rend la densité d'origine à partir
+ * de `feed-3` (900 px), seuil auquel le Studio repasse en disposition desktop.
+ */
+export const TOUCH_FIELD = 'h-11 feed-3:h-10';
+
 /** Miniature de tableau (ratio 16/9, taille imposée par le conteneur). */
 export function StudioThumbnail({
   url,

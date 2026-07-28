@@ -109,6 +109,13 @@ module.exports = {
         'pop-heart': 'pop-heart 300ms ease-out',
       },
       screens: {
+        /*
+         * `xxs` (360 px) : plus petit palier « téléphone étroit ». Ajouté pour
+         * pouvoir dégrader proprement en dessous (libellés courts de la barre
+         * de navigation, largeur de miniature en liste) sans toucher aux
+         * paliers historiques de la grille, qui restent la référence.
+         */
+        xxs: '360px',
         // Points de rupture de la grille de vidéos (1 → 5 colonnes)
         xs: '480px',
         'feed-2': '650px',
@@ -116,6 +123,17 @@ module.exports = {
         'feed-4': '1150px',
         'feed-5': '1450px',
         'feed-6': '1800px',
+        /*
+         * NOTE — pas de palier `{ raw: '(pointer: coarse)' }` ici.
+         * Dès qu'un seul écran est déclaré sous forme d'objet, Tailwind
+         * désactive les variantes `min-[…]` / `max-[…]` pour TOUTE la config
+         * (« The `min-*` and `max-*` variants are not supported with a
+         * `screens` configuration containing objects »), or la page de
+         * visionnage repose sur `min-[1015px]:`. Les cibles tactiles passent
+         * donc par des classes CSS (`kt-tap`, `kt-tap-y`, `kt-tap-halo`,
+         * `kt-coarse-hidden`) déclarées dans `styles.css` sous
+         * `@media (pointer: coarse)`.
+         */
       },
     },
   },

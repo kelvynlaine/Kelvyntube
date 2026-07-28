@@ -30,8 +30,12 @@ export function HashtagList({
 
   if (visible.length === 0) return null;
 
+  // `inline-flex` + `kt-tap-y` : les hashtags sont des cibles de 20 px de haut
+  // dans un paragraphe. On ne peut pas leur donner 44 px de large (ils se
+  // chevaucheraient dans un flux qui s'enroule), mais 44 px de hauteur au
+  // doigt suffit à les rendre atteignables sans changer le rendu souris.
   const itemClass =
-    'rounded text-kt-base font-medium text-accent-fg hover:underline kt-focus-ring';
+    'inline-flex items-center rounded text-kt-base font-medium text-accent-fg kt-tap-y hover:underline kt-focus-ring';
 
   return (
     <p className={cn('flex flex-wrap items-center gap-x-2 gap-y-1', className)}>

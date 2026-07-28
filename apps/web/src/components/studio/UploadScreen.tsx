@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { CheckCircle2, CloudUpload, Film, Loader2, TriangleAlert, X } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { CheckCircle2, CloudUpload, Loader2, TriangleAlert, X } from 'lucide-react';
 import {
   ROUTES,
   updateVideoSchema,
@@ -30,9 +30,15 @@ import {
   type UploadProgress,
 } from '@/lib/uploader';
 import { Panel } from './Panel';
+import { TOUCH_FIELD } from './bits';
 import { TagInput } from './TagInput';
 import { useProcessingState } from './VideoProcessingStatus';
-import { studioKeys, VISIBILITY_LABELS, type StudioVideoDetailDTO } from './studio-api';
+import {
+  studioKeys,
+  VISIBILITY_LABELS,
+  type StudioVideoDetailDTO,
+  type ThumbnailUploadResultDTO,
+} from './studio-api';
 import { useChannelId } from './useStudioUrlState';
 
 const VISIBILITY_OPTIONS: { value: VideoVisibility; label: string }[] = (
@@ -50,6 +56,7 @@ export function UploadScreen() {
   const channelId = useChannelId();
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -65,6 +72,13 @@ export function UploadScreen() {
   const [tags, setTags] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<VideoVisibility>('PRIVATE');
   const [thumbnail, setThumbnail] = useState<string | undefined>();
+  /**
+   * Miniature réellement importée, distincte de `thumbnail` (la sélection
+   * courante). Si l'utilisateur choisit simplement l'une des 3 propositions
+   * auto-générées, elle ne doit PAS être présentée comme « Perso » ni
+   * dupliquée dans la grille — seul un import explicite doit l'être.
+   */
+  const [customThumbnail, setCustomThumbnail] = useState<string | undefined>();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: categories } = useQuery({
@@ -156,12 +170,34 @@ export function UploadScreen() {
     },
     onSuccess: () => {
       toast({ message: 'Vidéo publiée', variant: 'success' });
+      // La page de détails réutilise la même clé de requête (`studioKeys.video`)
+      // que le polling ci-dessus : sans invalidation, elle repartirait du
+      // dernier instantané mis en cache PENDANT l'upload — c'est-à-dire d'avant
+      // que titre, tags et visibilité aient été enregistrés — et afficherait
+      // un formulaire « désynchronisé » (tags disparus, visibilité revenue à
+      // Privée) alors que l'enregistrement a bien réussi côté serveur.
+      void queryClient.invalidateQueries({ queryKey: studioKeys.video(videoId!) });
+      void queryClient.invalidateQueries({ queryKey: ['studio', 'videos', channelId] });
       router.push(PATHS.studioVideo(channelId, videoId!));
     },
     onError: (err) => {
       if (err instanceof Error && err.message === 'Formulaire invalide') return;
       toast({ message: 'Publication impossible', variant: 'error' });
     },
+  });
+
+  const uploadThumbnail = useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData();
+      form.append('file', file);
+      return api.put<ThumbnailUploadResultDTO>(ROUTES.videos.thumbnail(videoId!), form);
+    },
+    onSuccess: (result) => {
+      setThumbnail(result.thumbnailUrl);
+      setCustomThumbnail(result.thumbnailUrl);
+      toast({ message: 'Miniature mise à jour', variant: 'success' });
+    },
+    onError: () => toast({ message: 'Envoi de la miniature impossible', variant: 'error' }),
   });
 
   // ── Écran de dépôt (aucun fichier sélectionné) ──────────────────────────
@@ -182,20 +218,48 @@ export function UploadScreen() {
             if (dropped) startUpload(dropped);
           }}
           className={cn(
-            'flex flex-col items-center justify-center gap-4 rounded-kt-lg border-2 border-dashed border-border bg-bg-elevated px-6 py-20 text-center transition-colors',
+            // Padding vertical divisé par deux en mobile : 20 unités (80 px
+            // en haut ET en bas) poussaient le bouton hors de l'écran.
+            'flex flex-col items-center justify-center gap-4 rounded-kt-lg border-2 border-dashed border-border bg-bg-elevated px-4 py-10 text-center transition-colors feed-3:px-6 feed-3:py-20',
             dragging && 'border-accent-fg bg-accent/10',
           )}
         >
-          <span className="flex h-24 w-24 items-center justify-center rounded-full bg-bg-hover">
-            <CloudUpload size={44} className="text-fg-muted" aria-hidden="true" />
+          <span className="flex size-16 items-center justify-center rounded-full bg-bg-hover feed-3:size-24">
+            <CloudUpload
+              size={32}
+              className="text-fg-muted feed-3:hidden"
+              aria-hidden="true"
+            />
+            <CloudUpload
+              size={44}
+              className="hidden text-fg-muted feed-3:block"
+              aria-hidden="true"
+            />
           </span>
+          {/*
+            Le glisser-déposer n'existe pas sur un écran tactile : on n'annonce
+            donc pas une interaction impossible. Le message mobile décrit ce
+            que l'on peut réellement faire, et le bouton devient l'action
+            principale, pleine largeur.
+          */}
           <div>
-            <p className="text-kt-md">Glissez-déposez le fichier vidéo à mettre en ligne</p>
+            <p className="text-kt-md">
+              <span className="feed-3:hidden">Choisissez la vidéo à mettre en ligne</span>
+              <span className="hidden feed-3:inline">
+                Glissez-déposez le fichier vidéo à mettre en ligne
+              </span>
+            </p>
             <p className="text-kt-sm text-fg-muted">
               Vos vidéos restent privées tant que vous ne les publiez pas.
             </p>
           </div>
-          <Button onClick={() => inputRef.current?.click()}>Sélectionner un fichier</Button>
+          <Button
+            variant="brand"
+            className="h-11 w-full max-w-xs feed-3:h-9 feed-3:w-auto"
+            onClick={() => inputRef.current?.click()}
+          >
+            Sélectionner un fichier
+          </Button>
           <input
             ref={inputRef}
             type="file"
@@ -230,6 +294,7 @@ export function UploadScreen() {
         {!uploadDone && (
           <Button
             variant="ghost"
+            className="h-11 shrink-0 feed-3:h-9"
             iconLeft={<X size={16} />}
             onClick={() => {
               void uploaderRef.current?.abort();
@@ -310,9 +375,11 @@ export function UploadScreen() {
 
       {/* ── Détails ────────────────────────────────────────────────────── */}
       <Panel title="Détails" description="Ces informations pourront être modifiées plus tard.">
-        <div className="grid gap-4 feed-3:grid-cols-[1fr_320px]">
-          <div className="flex flex-col gap-4">
+        {/* `minmax(0,1fr)` : la colonne formulaire doit pouvoir rétrécir. */}
+        <div className="grid gap-4 feed-3:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="flex min-w-0 flex-col gap-4">
             <Input
+              className={TOUCH_FIELD}
               label="Titre (obligatoire)"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -332,6 +399,7 @@ export function UploadScreen() {
               error={errors.description}
             />
             <Select
+              className={TOUCH_FIELD}
               label="Catégorie"
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
@@ -346,6 +414,7 @@ export function UploadScreen() {
               hint="Entrée ou virgule pour valider. Les tags tendances sont suggérés."
             />
             <Select
+              className={TOUCH_FIELD}
               label="Visibilité"
               value={visibility}
               onChange={(e) => setVisibility(e.target.value as VideoVisibility)}
@@ -355,33 +424,42 @@ export function UploadScreen() {
 
           <div className="flex flex-col gap-4">
             <div>
-              <p className="mb-2 text-kt-sm font-medium">Miniature</p>
-              {video?.thumbnailCandidates?.length ? (
-                <ThumbnailPicker
-                  options={video.thumbnailCandidates}
-                  value={thumbnail ?? video.thumbnailUrl ?? undefined}
-                  onChange={setThumbnail}
-                />
-              ) : (
-                <div className="flex aspect-video items-center justify-center rounded-kt bg-bg-hover text-kt-sm text-fg-muted">
-                  <Film size={20} className="mr-2" aria-hidden="true" />
-                  Miniatures générées après le transcodage
-                </div>
-              )}
+              {/*
+               * L'import personnalisé ne dépend PAS des miniatures auto-générées :
+               * la vidéo existe dès `POST /upload/init`, donc `videoId` est déjà
+               * disponible pendant l'envoi/le transcodage. On ne bloque que sur
+               * `videoId` (jamais sur `thumbnailCandidates`, qui reste vide tant
+               * que le job de miniatures n'a pas tourné).
+               */}
+              <ThumbnailPicker
+                label="Miniature"
+                hint="Sélectionnez une proposition ou importez votre image (1280×720 recommandé)."
+                options={video?.thumbnailCandidates ?? []}
+                value={thumbnail ?? video?.thumbnailUrl ?? undefined}
+                onChange={setThumbnail}
+                customUrl={customThumbnail}
+                onCustomFile={(file) => uploadThumbnail.mutate(file)}
+                uploading={uploadThumbnail.isPending}
+                disabled={!videoId}
+              />
             </div>
           </div>
         </div>
       </Panel>
 
-      <div className="flex justify-end gap-2">
+      {/* Empilées au pouce (« Publier » en premier, sous le pouce), en ligne
+          alignées à droite dès qu'il y a de la place. */}
+      <div className="flex flex-col-reverse gap-2 xs:flex-row xs:justify-end">
         <Button
           variant="secondary"
+          className="h-11 xs:h-9"
           onClick={() => videoId && router.push(PATHS.studioVideos(channelId))}
           disabled={!videoId}
         >
           Enregistrer comme brouillon
         </Button>
         <Button
+          className="h-11 xs:h-9"
           disabled={!isReady || !title.trim()}
           loading={publish.isPending}
           onClick={() => publish.mutate()}

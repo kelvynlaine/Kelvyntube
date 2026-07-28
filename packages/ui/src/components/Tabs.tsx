@@ -77,7 +77,12 @@ export function Tabs({
       aria-label={label}
       onKeyDown={onKeyDown}
       className={cn(
-        'kt-no-scrollbar flex overflow-x-auto border-b border-border',
+        // `kt-no-scrollbar` masque la barre de défilement (elle mangerait une
+        // ligne visible sous les onglets sur Android) ; `overscroll-x-contain`
+        // évite qu'un balayage horizontal en fin de course déclenche le geste
+        // « retour » du navigateur ; `scroll-smooth` respecte automatiquement
+        // `prefers-reduced-motion` côté navigateur.
+        'kt-no-scrollbar flex overflow-x-auto overscroll-x-contain scroll-smooth border-b border-border',
         fullWidth && 'w-full',
         className,
       )}
@@ -100,7 +105,7 @@ export function Tabs({
             onClick={() => onChange(item.id)}
             className={cn(
               'relative -mb-px inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap',
-              'border-b-2 font-medium transition-colors kt-focus-ring',
+              'border-b-2 font-medium transition-colors kt-tap-y kt-focus-ring',
               size === 'sm' ? 'px-3 py-2 text-kt-sm' : 'px-4 py-3 text-kt-base',
               selected
                 ? 'border-fg text-fg'

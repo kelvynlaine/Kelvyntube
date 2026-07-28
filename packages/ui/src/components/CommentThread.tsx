@@ -85,7 +85,9 @@ export function CommentThread({
 
   return (
     <section className={cn('flex flex-col gap-6', className)}>
-      <header className="flex flex-wrap items-center gap-6">
+      {/* `gap-4` sous 480 px : 24 px entre le titre et le sélecteur de tri
+          font passer le tri à la ligne inutilement sur un écran de 320 px. */}
+      <header className="flex flex-wrap items-center gap-x-4 gap-y-2 xs:gap-6">
         <h2 className="text-kt-md font-medium text-fg">
           {formatCompactNumber(count)} commentaire{count > 1 ? 's' : ''}
         </h2>

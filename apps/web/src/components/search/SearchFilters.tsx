@@ -137,7 +137,12 @@ function FilterGroups({ values, onChange, className }: FilterGroupsProps) {
               return (
                 <label
                   key={option.value}
-                  className="group/option flex cursor-pointer items-center rounded-kt px-2 py-1.5"
+                  /*
+                   * `kt-tap-y` : dans la feuille mobile, une option de filtre
+                   * ne faisait que 29 px de haut. Au doigt elle passe à 44 px ;
+                   * la liste desktop reste compacte (souris = pointeur fin).
+                   */
+                  className="group/option flex cursor-pointer items-center rounded-kt px-2 py-1.5 kt-tap-y"
                 >
                   <input
                     type="radio"
@@ -239,7 +244,10 @@ export function SearchFilters({ values, onChange, onClear, className }: SearchFi
         side="bottom"
         title="Filtres de recherche"
         footer={
-          <div className="flex items-center justify-between gap-2">
+          // Le pied de la feuille est collé au bas de l'écran : on y ajoute la
+          // safe-area iOS pour que les boutons ne passent pas sous la barre
+          // d'accueil.
+          <div className="flex items-center justify-between gap-2 pb-[env(safe-area-inset-bottom)]">
             <Button variant="ghost" size="md" onClick={onClear} disabled={activeCount === 0}>
               Effacer les filtres
             </Button>

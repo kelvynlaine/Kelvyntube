@@ -64,19 +64,22 @@ export function BreakdownBars({
     <ul className={cn('flex flex-col gap-3', className)}>
       {displayed.map((row) => (
         <li key={row.label} className="flex flex-col gap-1">
-          <div className="flex items-baseline justify-between gap-3 text-kt-sm">
-            <span className="min-w-0 truncate text-fg">{row.label}</span>
-            <span className="shrink-0 tabular-nums text-fg-muted">
+          {/*
+            `min-w-0 truncate` sur le libellé + `shrink-0` sur la valeur :
+            un pays au nom à rallonge est coupé, mais le pourcentage — la seule
+            donnée qui compte — reste toujours visible et ne déborde jamais.
+            Le volume brut passe à la ligne sous `xs` plutôt que de comprimer
+            le libellé à trois lettres.
+          */}
+          <div className="flex items-baseline justify-between gap-2 text-kt-sm">
+            <span className="min-w-0 flex-1 truncate text-fg">{row.label}</span>
+            <span className="flex shrink-0 flex-col items-end tabular-nums text-fg-muted xs:flex-row xs:items-baseline xs:gap-2">
+              <span className="text-fg">{formatPercent(row.pct)}</span>
               {typeof row.value === 'number' ? (
-                <>
-                  <span className="text-fg">{formatPercent(row.pct)}</span>
-                  <span className="ml-2 text-fg-subtle">
-                    {formatNumber(row.value)} {valueLabel.toLowerCase()}
-                  </span>
-                </>
-              ) : (
-                <span className="text-fg">{formatPercent(row.pct)}</span>
-              )}
+                <span className="text-fg-subtle">
+                  {formatNumber(row.value)} {valueLabel.toLowerCase()}
+                </span>
+              ) : null}
             </span>
           </div>
           <div

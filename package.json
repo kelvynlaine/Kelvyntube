@@ -28,7 +28,8 @@
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
     "setup": "npm install && npm run infra:up && npm run db:generate && npm run db:push && npm run media:seed && npm run db:seed && npm run search:reindex",
-    "media:seed": "npm run media:seed -w @kelvyntube/api"
+    "media:seed": "npm run media:seed -w @kelvyntube/api",
+    "db:purge-demo": "npm run purge-demo -w @kelvyntube/db --"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

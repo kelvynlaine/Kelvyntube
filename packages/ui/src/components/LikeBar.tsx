@@ -50,15 +50,23 @@ export function LikeBar({
   const iconSize = size === 'sm' ? 18 : 22;
 
   const buttonClass = cn(
-    'inline-flex items-center gap-2 transition-colors kt-focus-ring',
+    'inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap transition-colors kt-focus-ring xs:gap-2',
     'text-kt-base font-medium text-fg hover:bg-bg-hover disabled:opacity-50',
-    size === 'sm' ? 'h-8 px-3' : 'h-9 px-4',
+    // Rembourrage réduit sous 480 px : sur un iPhone la rangée d'actions
+    // (LikeBar / Partager / Enregistrer / ⋯) tient alors sans défilement,
+    // et le compteur reste lisible plutôt que d'être rogné.
+    size === 'sm' ? 'h-8 px-2.5 xs:px-3' : 'h-9 px-3 xs:px-4 kt-tap-y',
   );
 
   return (
     <div
       className={cn(
-        'inline-flex items-stretch overflow-hidden rounded-pill bg-bg-elevated',
+        // `shrink-0` est le correctif central : placée en tête d'une rangée
+        // `flex`, la barre était comprimée jusqu'à 33 px de large, ce qui
+        // masquait le compteur ET le bouton « je n'aime pas ». Elle refuse
+        // désormais toute compression ; c'est à la rangée parente de passer à
+        // la ligne ou de défiler.
+        'inline-flex w-fit shrink-0 items-stretch overflow-hidden rounded-pill bg-bg-elevated',
         className,
       )}
     >

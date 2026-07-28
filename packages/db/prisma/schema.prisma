@@ -121,6 +121,13 @@ model User {
   avatarUrl   String?
   role        UserRole @default(USER)
 
+  /**
+   * Compte synthétique généré par le booster du Studio (commentaires, likes,
+   * abonnés simulés). Sert à distinguer l'engagement réel de l'engagement
+   * simulé, et à purger proprement les données de démonstration.
+   */
+  isBot       Boolean  @default(false)
+
   // Onboarding : centres d'intérêt (slugs de catégories) pour amorcer la reco
   interests       String[] @default([])
   onboardedAt     DateTime?

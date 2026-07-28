@@ -18,7 +18,8 @@ export function WatchShell({ children }: { children: ReactNode }) {
 
   return (
     <ToastProvider>
-      <div className="min-h-screen bg-bg">
+      {/* `100dvh` : `100vh` fige la hauteur barre d'URL déployée sur iOS. */}
+      <div className="min-h-[100dvh] bg-bg">
         <a
           href="#contenu-visionnage"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-kt focus:bg-bg-elevated focus:px-4 focus:py-2 focus:text-fg"

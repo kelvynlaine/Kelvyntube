@@ -108,7 +108,11 @@ export function ToastProvider({
               aria-live="polite"
               aria-relevant="additions"
               className={cn(
-                'pointer-events-none fixed bottom-4 left-4 z-[200] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-2',
+                // La pile est remontée du retrait de sécurité bas : sinon les
+                // toasts passent sous l'indicateur d'accueil iOS (et sous la
+                // `BottomNav`, qui occupe déjà cette bande sur mobile).
+                'pointer-events-none fixed left-4 z-[200] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-2',
+                'bottom-[calc(1rem+env(safe-area-inset-bottom))] feed-3:bottom-4',
                 className,
               )}
             >
@@ -190,7 +194,7 @@ export function Toast({
             action.onClick();
             onDismiss(id);
           }}
-          className="shrink-0 rounded px-1 text-kt-base font-medium text-accent-fg hover:underline kt-focus-ring"
+          className="inline-flex shrink-0 items-center rounded px-1 text-kt-base font-medium text-accent-fg kt-tap-y hover:underline kt-focus-ring"
         >
           {action.label}
         </button>
@@ -200,7 +204,10 @@ export function Toast({
         type="button"
         aria-label="Fermer la notification"
         onClick={() => onDismiss(id)}
-        className="shrink-0 rounded-full p-1 text-fg-muted transition-colors hover:bg-bg-hover hover:text-fg kt-focus-ring"
+        // `halo` : un toast fait 3 lignes de haut au maximum, une croix de
+        // 44 px y serait disproportionnée. Le pseudo-élément donne la zone
+        // tactile sans changer le dessin.
+        className="inline-flex shrink-0 items-center justify-center rounded-full p-1 text-fg-muted transition-colors kt-tap-halo hover:bg-bg-hover hover:text-fg kt-focus-ring"
       >
         <X size={16} />
       </button>

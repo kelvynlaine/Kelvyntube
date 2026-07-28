@@ -20,6 +20,17 @@ export interface IconButtonProps
   /** État enfoncé (menu ouvert, filtre actif…). */
   active?: boolean;
   loading?: boolean;
+  /**
+   * Stratégie de cible tactile appliquée UNIQUEMENT sur pointeur grossier
+   * (doigt) — le rendu souris est identique dans les deux cas.
+   * - `grow` (défaut) : la boîte atteint réellement 44 × 44 px. C'est le cas
+   *   général : un bouton icône est presque toujours seul dans sa rangée.
+   * - `halo` : la boîte garde sa taille et un `::after` transparent porte la
+   *   zone sensible à 44 × 44. À réserver aux rangées denses où 12 px de plus
+   *   seraient pris sur une colonne de texte déjà courte (menu « ⋮ » d'une
+   *   carte vidéo compacte sur téléphone).
+   */
+  touchTarget?: 'grow' | 'halo';
   children: ReactNode;
 }
 
@@ -48,6 +59,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       variant = 'ghost',
       active = false,
       loading = false,
+      touchTarget = 'grow',
       disabled,
       className,
       children,
@@ -66,6 +78,9 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
           'inline-flex shrink-0 items-center justify-center rounded-full p-0',
           'transition-colors duration-150 kt-focus-ring',
           SIZES[size],
+          // 32/40 px suffisent à la souris mais pas au doigt : on porte la
+          // cible à 44 px au doigt seulement (cf. styles.css).
+          touchTarget === 'grow' ? 'kt-tap' : 'kt-tap-halo',
           VARIANTS[variant],
           active && 'bg-bg-active',
           (disabled || loading) && 'cursor-not-allowed opacity-50',

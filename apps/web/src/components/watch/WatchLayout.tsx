@@ -142,9 +142,12 @@ export function WatchLayout({
   return (
     <div
       className={cn(
-        'mx-auto grid w-full max-w-[1754px] grid-cols-1 gap-x-6 gap-y-4 px-4 pb-16',
+        'mx-auto grid w-full max-w-[1754px] grid-cols-1 gap-x-6 gap-y-4 px-4',
+        // Réserve de bas de page + safe-area iOS (barre d'accueil).
+        'pb-[calc(4rem+env(safe-area-inset-bottom))]',
         'min-[1015px]:grid-cols-[minmax(0,1fr)_402px]',
-        theaterMode ? 'pt-0' : 'pt-4',
+        // Sur mobile le lecteur est collé sous la barre : aucune marge haute.
+        theaterMode ? 'pt-0' : 'pt-0 min-[1015px]:pt-4',
       )}
     >
       {/* ── Lecteur (position stable dans l'arbre) ─────────────────────── */}
@@ -164,7 +167,8 @@ export function WatchLayout({
         <div
           className={cn(
             'relative',
-            theaterMode && 'mx-auto max-w-[calc((100vh-9rem)*16/9)]',
+            // `dvh` : la hauteur utile change quand la barre d'URL mobile se replie.
+            theaterMode && 'mx-auto max-w-[calc((100dvh-9rem)*16/9)]',
           )}
         >
           <VideoPlayer

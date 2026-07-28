@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '@kelvyntube/db';
-import { ROUTES, cursorPaginationSchema } from '@kelvyntube/shared';
+import { ROUTES, cursorPaginationSchema, tagSuggestSchema } from '@kelvyntube/shared';
 import type { TagDTO, ChannelSummaryDTO, VideoCardDTO, CursorPage } from '@kelvyntube/shared';
 import {
   channelSummarySelect,
@@ -50,9 +50,6 @@ const tagVideosSchema = cursorPaginationSchema.extend({
   sort: z.enum(['recent', 'popular']).default('recent'),
 });
 
-const tagSuggestSchema = z.object({
-  q: z.string().min(1).max(40),
-});
 
 export async function registerTagRoutes(app: FastifyInstance) {
   // ── GET /tags/trending ──────────────────────────────────────────────────
@@ -67,30 +64,50 @@ export async function registerTagRoutes(app: FastifyInstance) {
     return tags.map(toTagDTO);
   });
 
-  // ── GET /tags/suggest?q= ────────────────────────────────────────────────
-  // Suggestions à la saisie : préfixe d'abord, complété par les tendances.
+  // ── GET /tags/suggest?q=&limit= ─────────────────────────────────────────
+  //
+  // `q` est OPTIONNEL. Sans terme de recherche, la route renvoie l'ensemble
+  // des hashtags existants (les plus utilisés d'abord) : c'est ce qui alimente
+  // le panel « tous les hashtags » du formulaire de publication.
+  //
+  // On ne filtre volontairement PAS sur `usageCount > 0` ici : un hashtag créé
+  // mais pas encore rattaché à une vidéo publiée doit rester proposable, sinon
+  // le panel se vide dès qu'on repart d'un catalogue propre.
   app.get(ROUTES.tags.suggest, async (req): Promise<TagDTO[]> => {
-    const { q } = tagSuggestSchema.parse(req.query);
-    const prefix = normalizeTagName(q).replace(/[\\%_]/g, '');
+    const { q, limit } = tagSuggestSchema.parse(req.query);
+    const prefix = q ? normalizeTagName(q).replace(/[\\%_]/g, '') : '';
 
-    const matches = prefix
-      ? await prisma.tag.findMany({
-          where: { name: { startsWith: prefix } },
-          orderBy: [{ trendingScore: 'desc' }, { usageCount: 'desc' }],
-          take: TAG_SUGGEST_LIMIT,
-          select: tagSelect,
-        })
-      : [];
+    const popularityOrder = [
+      { trendingScore: 'desc' as const },
+      { usageCount: 'desc' as const },
+      { name: 'asc' as const },
+    ];
 
-    // Complète avec les hashtags tendances si le préfixe donne peu de résultats.
-    if (matches.length < TAG_SUGGEST_LIMIT) {
+    // Sans préfixe : catalogue complet, trié par popularité.
+    if (!prefix) {
+      const all = await prisma.tag.findMany({
+        orderBy: popularityOrder,
+        take: limit,
+        select: tagSelect,
+      });
+      return all.map(toTagDTO);
+    }
+
+    // Avec préfixe : correspondances d'abord…
+    const matches = await prisma.tag.findMany({
+      where: { name: { startsWith: prefix } },
+      orderBy: popularityOrder,
+      take: limit,
+      select: tagSelect,
+    });
+
+    // …puis complétées par le reste du catalogue pour que le panel ne se vide
+    // jamais pendant la frappe (comportement YouTube).
+    if (matches.length < limit) {
       const fillers = await prisma.tag.findMany({
-        where: {
-          usageCount: { gt: 0 },
-          id: { notIn: matches.map((t) => t.id) },
-        },
-        orderBy: [{ trendingScore: 'desc' }, { usageCount: 'desc' }],
-        take: TAG_SUGGEST_LIMIT - matches.length,
+        where: { id: { notIn: matches.map((t) => t.id) } },
+        orderBy: popularityOrder,
+        take: limit - matches.length,
         select: tagSelect,
       });
       matches.push(...fillers);

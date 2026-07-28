@@ -96,8 +96,16 @@ export function VideoActions({
   ];
 
   return (
+    /*
+     * Comportement YouTube mobile : la rangée d'actions déborde volontairement
+     * et défile horizontalement plutôt que de comprimer ses boutons (la
+     * `LikeBar` tombait à ~33 px de large et son compteur devenait illisible).
+     * Chaque action est donc `shrink-0`, et la rangée « saigne » jusqu'aux
+     * bords de l'écran (`-mx-4 px-4`) pour signaler qu'il y a une suite.
+     * À partir de 1015 px la rangée tient sur une ligne : on annule le bleed.
+     */
     <div
-      className={`kt-no-scrollbar flex items-center gap-2 overflow-x-auto ${className ?? ''}`}
+      className={`kt-no-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 min-[1015px]:mx-0 min-[1015px]:px-0 ${className ?? ''}`}
     >
       <LikeBar
         likeCount={video.likeCount}
@@ -105,10 +113,12 @@ export function VideoActions({
         state={video.viewer.like}
         onLike={() => handleLike('LIKE')}
         onDislike={() => handleLike('DISLIKE')}
+        className="shrink-0"
       />
 
       <Button
         variant="secondary"
+        className="shrink-0"
         iconLeft={<Share2 size={18} aria-hidden="true" />}
         onClick={() => {
           setShareTime(getCurrentTime());
@@ -120,6 +130,7 @@ export function VideoActions({
 
       <Button
         variant="secondary"
+        className="shrink-0"
         iconLeft={<Bookmark size={18} aria-hidden="true" />}
         onClick={() => {
           if (!guard('enregistrer')) return;
@@ -138,6 +149,7 @@ export function VideoActions({
             {...triggerProps}
             aria-label="Plus d'actions sur la vidéo"
             variant="solid"
+            className="shrink-0"
           >
             <MoreHorizontal size={20} />
           </IconButton>

@@ -3,8 +3,10 @@ import { z } from 'zod';
 import {
   ROUTES,
   analyticsRangeSchema,
+  boostSchema,
   offsetPaginationSchema,
   visibilitySchema,
+  type BoostResultDTO,
   type OffsetPage,
   type StudioOverviewDTO,
   type StudioVideoRowDTO,
@@ -13,6 +15,7 @@ import {
   type VideoCardDTO,
 } from '@kelvyntube/shared';
 import { unauthorized } from '../../lib/errors.js';
+import { runBoost } from './boost.service.js';
 import {
   getStudioOverview,
   getSubscriberAnalytics,
@@ -153,6 +156,25 @@ export async function registerStudioRoutes(app: FastifyInstance) {
         perHour: realtime.perHour,
         topVideosNow,
       };
+    },
+  );
+
+  /**
+   * Booster d'engagement — OUTIL DE DÉVELOPPEMENT / DÉMONSTRATION.
+   *
+   * Fabrique des métriques synthétiques sur cette instance uniquement :
+   * compteurs, agrégats journaliers, et vraies lignes (commentaires, likes,
+   * abonnements) signées par des comptes `isBot`. Aucune plateforme tierce
+   * n'est contactée. Réservé au propriétaire de la chaîne.
+   */
+  app.post(
+    ROUTES.studio.boost(':channelId'),
+    { preHandler: app.authenticate },
+    async (req): Promise<BoostResultDTO> => {
+      const { channelId } = channelParamsSchema.parse(req.params);
+      await app.assertChannelOwner(requireUserId(req), channelId);
+      const input = boostSchema.parse(req.body ?? {});
+      return runBoost(channelId, input);
     },
   );
 }

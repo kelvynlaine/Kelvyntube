@@ -141,6 +141,7 @@ export function toVideoDetailDTO(
     width: video.width,
     height: video.height,
     thumbnailUrl: video.thumbnailUrl,
+    thumbnailCandidates: video.thumbnailCandidates,
     hlsMasterUrl: video.hlsMasterUrl,
     mp4FallbackUrl: video.mp4FallbackUrl,
     previewSpriteUrl: video.previewSpriteUrl,

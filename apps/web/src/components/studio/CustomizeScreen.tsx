@@ -23,7 +23,7 @@ import {
 } from '@kelvyntube/ui';
 import { api } from '@/lib/api';
 import { Panel } from './Panel';
-import { StudioThumbnail } from './bits';
+import { StudioThumbnail, TOUCH_FIELD } from './bits';
 import {
   studioKeys,
   type ChannelAssetResultDTO,
@@ -146,11 +146,11 @@ export function CustomizeScreen() {
   return (
     <div className="flex flex-col gap-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <h1 className="text-kt-xl font-semibold">Personnalisation de la chaîne</h1>
-          <p className="text-kt-sm text-fg-muted">@{channel.handle}</p>
+          <p className="truncate text-kt-sm text-fg-muted">@{channel.handle}</p>
         </div>
-        <Button loading={save.isPending} onClick={() => save.mutate()}>
+        <Button className="h-11 feed-3:h-9" loading={save.isPending} onClick={() => save.mutate()}>
           Publier
         </Button>
       </header>
@@ -204,6 +204,7 @@ export function CustomizeScreen() {
           <Panel title="Nom et identifiant">
             <div className="flex flex-col gap-4">
               <Input
+                className={TOUCH_FIELD}
                 label="Nom de la chaîne"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -212,6 +213,7 @@ export function CustomizeScreen() {
               />
               <div>
                 <Input
+                  className={TOUCH_FIELD}
                   label="Handle"
                   value={handle}
                   onChange={(e) => setHandle(e.target.value.replace(/^@/, ''))}
@@ -247,7 +249,8 @@ export function CustomizeScreen() {
                       <button
                         key={s}
                         type="button"
-                        className="kt-chip"
+                        // `.kt-chip` ne fait que 32 px de haut.
+                        className="kt-chip min-h-11 feed-3:min-h-0"
                         onClick={() => setHandle(s)}
                       >
                         @{s}
@@ -279,6 +282,7 @@ export function CustomizeScreen() {
               <Button
                 variant="secondary"
                 size="sm"
+                className="h-11 feed-3:h-8"
                 iconLeft={<Plus size={15} />}
                 disabled={links.length >= 10}
                 onClick={() => setLinks([...links, { title: '', url: '' }])}
@@ -290,10 +294,17 @@ export function CustomizeScreen() {
             {links.length === 0 ? (
               <p className="text-kt-sm text-fg-muted">Aucun lien pour le moment.</p>
             ) : (
-              <ul className="flex flex-col gap-3">
+              <ul className="flex flex-col gap-4 feed-2:gap-3">
                 {links.map((link, index) => (
-                  <li key={index} className="flex items-end gap-2">
+                  // Titre et URL s'empilent en mobile : côte à côte, sur
+                  // 320 px, l'URL n'aurait qu'une trentaine de pixels utiles.
+                  // Le bouton « supprimer » reste ancré à droite de la ligne.
+                  <li
+                    key={index}
+                    className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-2 feed-2:grid-cols-[12rem_minmax(0,1fr)_auto]"
+                  >
                     <Input
+                      className={TOUCH_FIELD}
                       label={index === 0 ? 'Titre' : undefined}
                       aria-label={`Titre du lien ${index + 1}`}
                       value={link.title}
@@ -303,9 +314,10 @@ export function CustomizeScreen() {
                           links.map((l, i) => (i === index ? { ...l, title: e.target.value } : l)),
                         )
                       }
-                      containerClassName="w-48"
+                      containerClassName="min-w-0"
                     />
                     <Input
+                      className={TOUCH_FIELD}
                       label={index === 0 ? 'URL' : undefined}
                       aria-label={`URL du lien ${index + 1}`}
                       type="url"
@@ -316,10 +328,11 @@ export function CustomizeScreen() {
                           links.map((l, i) => (i === index ? { ...l, url: e.target.value } : l)),
                         )
                       }
-                      containerClassName="flex-1"
+                      containerClassName="col-span-2 min-w-0 feed-2:col-span-1"
                     />
                     <IconButton
                       aria-label={`Supprimer le lien ${index + 1}`}
+                      className="row-start-1 size-11 self-end feed-2:row-start-auto feed-2:size-10"
                       onClick={() => setLinks(links.filter((_, i) => i !== index))}
                     >
                       <Trash2 size={17} />
@@ -332,6 +345,7 @@ export function CustomizeScreen() {
 
           <Panel title="Localisation">
             <Input
+              className={TOUCH_FIELD}
               label="Pays ou région"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
@@ -468,6 +482,7 @@ function AssetUploader({
         <div className="flex flex-col gap-2">
           <Button
             variant="secondary"
+            className="h-11 feed-3:h-9"
             iconLeft={<ImageUp size={16} />}
             loading={upload.isPending}
             onClick={() => inputRef.current?.click()}

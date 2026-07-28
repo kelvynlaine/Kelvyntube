@@ -181,6 +181,8 @@ export interface VideoDetailDTO {
   width: number | null;
   height: number | null;
   thumbnailUrl: string | null;
+  /** Miniatures auto-générées par le transcodage (3 en général) — vide tant que le job n'a pas tourné. */
+  thumbnailCandidates: string[];
   hlsMasterUrl: string | null;
   mp4FallbackUrl: string | null;
   previewSpriteUrl: string | null;
@@ -395,6 +397,37 @@ export interface VideoAnalyticsDTO {
   countries: { country: string; views: number; pct: number }[];
   ageGroups: { bucket: string; pct: number }[];
   realtime: { liveViewers: number; perHour: TimeSeriesPointDTO[] };
+}
+
+// ── Booster d'engagement (outil de développement / démonstration) ──────────
+
+/**
+ * Résultat d'une simulation d'engagement lancée depuis Kelvyn Studio.
+ *
+ * ⚠️ Outil de test : il fabrique des métriques sur VOTRE propre instance
+ * (compteurs, agrégats journaliers, comptes `isBot`). Il ne touche à aucune
+ * plateforme tierce et ne remplace pas de l'audience réelle.
+ */
+export interface BoostResultDTO {
+  target: {
+    type: 'video' | 'channel';
+    id: string;
+    title: string;
+  };
+  applied: {
+    views: number;
+    likes: number;
+    dislikes: number;
+    comments: number;
+    subscribers: number;
+  };
+  /** Lignes `Comment` réellement écrites (plafonnées, contrairement aux vues). */
+  botCommentsCreated: number;
+  /** Lignes `Subscription` réellement écrites. */
+  botSubscriptionsCreated: number;
+  /** Comptes `isBot` créés à la volée pour cette exécution. */
+  botUsersCreated: number;
+  durationMs: number;
 }
 
 // ── Feed ───────────────────────────────────────────────────────────────────

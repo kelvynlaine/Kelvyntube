@@ -97,7 +97,20 @@ export function DropdownMenu({
   const [activeIndex, setActiveIndex] = useState(-1);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  /**
+   * Correction horizontale appliquée au panneau, en pixels.
+   * Le menu est positionné en CSS pure (`left-0` / `right-0`) : sur un écran
+   * large ça suffit toujours, mais sur téléphone un déclencheur situé près
+   * d'un bord projette un panneau de 224 px hors du viewport — il devient
+   * alors partiellement inatteignable et provoque un débordement horizontal
+   * de la page. On mesure donc après ouverture et on décale du strict
+   * nécessaire pour rentrer, en gardant 8 px de marge.
+   */
+  const [shiftX, setShiftX] = useState(0);
+  const shiftRef = useRef(0);
 
   /** Indices des éléments réellement focusables. */
   const focusables = useMemo(
@@ -133,6 +146,45 @@ export function DropdownMenu({
     if (!open || activeIndex < 0) return;
     itemRefs.current[activeIndex]?.focus();
   }, [open, activeIndex]);
+
+  // Recalage anti-débordement du panneau
+  useEffect(() => {
+    if (!open) {
+      shiftRef.current = 0;
+      setShiftX(0);
+      return;
+    }
+
+    const adjust = () => {
+      const el = menuRef.current;
+      if (!el) return;
+
+      // La mesure inclut le décalage déjà appliqué : on le soustrait pour
+      // raisonner sur la position « naturelle ». Le calcul est ainsi
+      // idempotent — une rotation d'écran qui libère de la place ramène
+      // spontanément le panneau à zéro au lieu de rester décalé.
+      const applied = shiftRef.current;
+      const rect = el.getBoundingClientRect();
+      const naturalLeft = rect.left - applied;
+      const naturalRight = rect.right - applied;
+      const margin = 8;
+
+      let next = 0;
+      if (naturalRight > window.innerWidth - margin) {
+        next = window.innerWidth - margin - naturalRight;
+      }
+      // Le bord gauche prime : mieux vaut rogner à droite que rendre le début
+      // des libellés inaccessible.
+      if (naturalLeft + next < margin) next = margin - naturalLeft;
+
+      shiftRef.current = next;
+      setShiftX(next);
+    };
+
+    adjust();
+    window.addEventListener('resize', adjust);
+    return () => window.removeEventListener('resize', adjust);
+  }, [open, items.length]);
 
   const openWith = useCallback(
     (position: 'first' | 'last' | 'none') => {
@@ -245,7 +297,7 @@ export function DropdownMenu({
           onClick={triggerProps.onClick}
           onKeyDown={onTriggerKeyDown}
           className={cn(
-            'inline-flex items-center justify-center rounded-full kt-focus-ring',
+            'inline-flex items-center justify-center rounded-full kt-tap-y kt-focus-ring',
             triggerClassName,
           )}
         >
@@ -255,14 +307,20 @@ export function DropdownMenu({
 
       {open ? (
         <div
+          ref={menuRef}
           id={menuId}
           role="menu"
           aria-label={label}
           aria-labelledby={triggerId}
           onKeyDown={onMenuKeyDown}
+          style={shiftX ? { transform: `translateX(${shiftX}px)` } : undefined}
           className={cn(
-            'absolute z-50 min-w-56 animate-slide-up overflow-hidden rounded-kt border border-border',
+            'absolute z-50 animate-slide-up overflow-hidden rounded-kt border border-border',
             'bg-bg-elevated py-2 shadow-xl',
+            // La largeur minimale de 224 px est conservée tant que le viewport
+            // le permet ; en dessous elle cède, sinon le panneau serait plus
+            // large que l'écran avant même le recalage horizontal.
+            'min-w-[min(14rem,calc(100vw-2rem))] max-w-[calc(100vw-1rem)]',
             side === 'bottom' ? 'top-full mt-1' : 'bottom-full mb-1',
             align === 'end' ? 'right-0' : 'left-0',
             menuClassName,
@@ -298,7 +356,7 @@ export function DropdownMenu({
                 onMouseEnter={() => setActiveIndex(index)}
                 className={cn(
                   'flex w-full items-center gap-3 px-4 py-2 text-left text-kt-base transition-colors',
-                  'hover:bg-bg-hover focus:bg-bg-hover focus:outline-none',
+                  'kt-tap-y hover:bg-bg-hover focus:bg-bg-hover focus:outline-none',
                   item.danger ? 'text-danger' : 'text-fg',
                   item.disabled && 'cursor-not-allowed opacity-40',
                 )}

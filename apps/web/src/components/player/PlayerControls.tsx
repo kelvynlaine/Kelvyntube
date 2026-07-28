@@ -56,6 +56,13 @@ export interface PlayerControlsProps {
 
   /** Zones tactiles agrandies (plein écran / mobile). */
   large?: boolean;
+  /**
+   * Écran étroit (< 640 px) : on retire les contrôles secondaires (volume,
+   * mini-lecteur). Avec des cibles de 44 px, la rangée complète dépasse
+   * largement 320 px de large et se ferait rogner par le lecteur.
+   * Le volume reste pilotable par les boutons matériels du téléphone.
+   */
+  compact?: boolean;
   className?: string;
 }
 
@@ -87,6 +94,7 @@ export function PlayerControls({
   isFullscreen,
   onToggleFullscreen,
   large = false,
+  compact = false,
   className,
 }: PlayerControlsProps) {
   const buttonClass = clsx(
@@ -116,18 +124,22 @@ export function PlayerControls({
         </button>
       ) : null}
 
-      <VolumeControl
-        volume={volume}
-        muted={muted}
-        onVolumeChange={onVolumeChange}
-        onToggleMute={onToggleMute}
-        large={large}
-      />
+      {compact ? null : (
+        <VolumeControl
+          volume={volume}
+          muted={muted}
+          onVolumeChange={onVolumeChange}
+          onToggleMute={onToggleMute}
+          large={large}
+        />
+      )}
 
       <span
         className={clsx(
           'ml-1 select-none whitespace-nowrap tabular-nums text-white/95',
-          large ? 'text-kt-base' : 'text-kt-sm',
+          // Sur écran étroit on garde le compteur en petite taille : il ne
+          // s'agit pas d'une cible tactile et il doit tenir sur une ligne.
+          large && !compact ? 'text-kt-base' : 'text-kt-sm',
         )}
       >
         <span className="sr-only">Position : </span>
@@ -179,7 +191,7 @@ export function PlayerControls({
         {settingsMenu}
       </div>
 
-      {pipSupported ? (
+      {pipSupported && !compact ? (
         <button
           type="button"
           onClick={onTogglePip}

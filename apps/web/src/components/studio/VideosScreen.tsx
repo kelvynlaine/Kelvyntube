@@ -25,6 +25,7 @@ import {
 import { api } from '@/lib/api';
 import { PATHS } from '@/lib/nav';
 import { BulkActionBar } from './BulkActionBar';
+import { VideoListCard } from './VideoListCard';
 import { VideoTableRow } from './VideoTableRow';
 import {
   STATUS_LABELS,
@@ -61,6 +62,13 @@ const STATUS_VALUES: VideoStatus[] = [
 ];
 
 const VISIBILITY_VALUES: VideoVisibility[] = ['PUBLIC', 'UNLISTED', 'PRIVATE', 'SCHEDULED'];
+
+/**
+ * Les contrôles `sm` du design system font 32 px de haut : confortable à la
+ * souris, sous la cible tactile de 44 px au doigt. On les rehausse jusqu'à
+ * `feed-3`, seuil auquel l'écran Contenu repasse en mode tableau/desktop.
+ */
+const MOBILE_CONTROL_HEIGHT = 'h-11 text-kt-base feed-3:h-8 feed-3:text-kt-sm';
 
 const COLUMNS = [
   { key: 'video', label: 'Vidéo', className: 'text-left' },
@@ -163,14 +171,21 @@ export function VideosScreen() {
   const rangeEnd = Math.min(page * pageSize, total);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div
+      className={cn(
+        'flex flex-col gap-4',
+        // La barre d'actions groupées est FIXE en bas d'écran sur mobile :
+        // on réserve la place, sinon elle masquerait la dernière carte.
+        selected.length > 0 && 'pb-28 feed-3:pb-0',
+      )}
+    >
       {/* ── En-tête ───────────────────────────────────────────────────── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-kt-lg font-medium text-fg">Contenu de la chaîne</h2>
         <Link
           href={PATHS.studioUpload(channelId)}
           className={cn(
-            'inline-flex h-9 items-center gap-2 rounded-pill bg-brand px-4',
+            'inline-flex h-11 items-center gap-2 rounded-pill bg-brand px-4 feed-3:h-9',
             'text-kt-base font-medium text-white transition-colors hover:bg-brand-hover kt-focus-ring',
           )}
         >
@@ -179,8 +194,14 @@ export function VideosScreen() {
         </Link>
       </div>
 
-      {/* ── Filtres ───────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap items-end gap-3 rounded-kt border border-border bg-bg-elevated p-3">
+      {/*
+        ── Filtres ─────────────────────────────────────────────────────
+        Grille plutôt que `flex-wrap` : à 320 px les trois listes tiennent
+        chacune sur sa ligne, à 480 px elles se rangent deux par deux, et le
+        desktop retrouve la rangée d'origine. Les contrôles font 44 px de haut
+        tant que la souris n'a pas repris la main (feed-3).
+      */}
+      <div className="grid grid-cols-1 items-end gap-3 rounded-kt border border-border bg-bg-elevated p-3 xs:grid-cols-2 feed-3:flex feed-3:flex-wrap">
         <Input
           label="Rechercher"
           inputSize="sm"
@@ -188,14 +209,16 @@ export function VideosScreen() {
           value={searchDraft}
           iconLeft={<Search size={16} aria-hidden="true" />}
           onChange={(event) => setSearchDraft(event.target.value)}
-          containerClassName="min-w-[14rem] flex-1"
+          className={MOBILE_CONTROL_HEIGHT}
+          containerClassName="xs:col-span-2 feed-3:min-w-[14rem] feed-3:flex-1"
         />
         <Select
           label="Statut"
           selectSize="sm"
           value={status}
           onChange={(event) => setQuery({ status: event.target.value }, { resetPage: true })}
-          containerClassName="w-44"
+          className={MOBILE_CONTROL_HEIGHT}
+          containerClassName="feed-3:w-44"
         >
           <option value="">Tous les statuts</option>
           {STATUS_VALUES.map((value) => (
@@ -209,7 +232,8 @@ export function VideosScreen() {
           selectSize="sm"
           value={visibility}
           onChange={(event) => setQuery({ visibility: event.target.value }, { resetPage: true })}
-          containerClassName="w-44"
+          className={MOBILE_CONTROL_HEIGHT}
+          containerClassName="feed-3:w-44"
         >
           <option value="">Toutes</option>
           {VISIBILITY_VALUES.map((value) => (
@@ -224,7 +248,8 @@ export function VideosScreen() {
           value={sort}
           options={SORT_OPTIONS}
           onChange={(event) => setQuery({ sort: event.target.value }, { resetPage: true })}
-          containerClassName="w-48"
+          className={MOBILE_CONTROL_HEIGHT}
+          containerClassName="xs:col-span-2 feed-3:col-span-1 feed-3:w-48"
         />
       </div>
 
@@ -264,7 +289,7 @@ export function VideosScreen() {
               <Link
                 href={PATHS.studioUpload(channelId)}
                 className={cn(
-                  'inline-flex h-9 items-center rounded-pill bg-brand px-4',
+                  'inline-flex h-11 items-center rounded-pill bg-brand px-4 feed-3:h-9',
                   'text-kt-base font-medium text-white hover:bg-brand-hover kt-focus-ring',
                 )}
               >
@@ -274,52 +299,105 @@ export function VideosScreen() {
           }
         />
       ) : (
-        <div className="kt-scroll overflow-x-auto rounded-kt border border-border">
-          <table className="w-full min-w-[68rem] border-collapse text-kt-base">
-            <caption className="sr-only">
-              Vidéos de la chaîne, avec leur visibilité et leurs statistiques
-            </caption>
-            <thead>
-              <tr className="border-b border-border bg-bg-elevated text-kt-sm text-fg-muted">
-                <th scope="col" className="px-2 py-2">
-                  <Checkbox
-                    checked={allSelected}
-                    ref={(element) => {
-                      if (element) element.indeterminate = someSelected;
-                    }}
-                    onChange={(event) => toggleAll(event.target.checked)}
-                    aria-label="Sélectionner toutes les vidéos de la page"
-                  />
-                </th>
-                {COLUMNS.map((column) => (
-                  <th
-                    key={column.key}
-                    scope="col"
-                    className={cn('px-2 py-2 font-medium', column.className)}
-                  >
-                    {column.label}
+        <>
+          {/*
+            En mobile, la case « tout sélectionner » de l'en-tête de tableau
+            n'existe plus : on la réexpose au-dessus de la liste de cartes,
+            sinon la sélection multiple deviendrait fastidieuse au doigt.
+          */}
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 px-1 feed-3:hidden">
+            <Checkbox
+              checked={allSelected}
+              ref={(element) => {
+                if (element) element.indeterminate = someSelected;
+              }}
+              onChange={(event) => toggleAll(event.target.checked)}
+              aria-label="Sélectionner toutes les vidéos de la page"
+            />
+            <span className="text-kt-sm text-fg-muted">
+              {selected.length > 0
+                ? `${selected.length} sélectionnée${selected.length > 1 ? 's' : ''}`
+                : 'Tout sélectionner'}
+            </span>
+          </label>
+
+          {/*
+            ── Rendu MOBILE : liste de cartes (sous feed-3 / 900 px) ──────
+            Le tableau ci-dessous impose 1088 px de large. En dessous de
+            900 px on le remplace par des cartes : mêmes données, même
+            sélection, mêmes actions, sans scroll horizontal.
+          */}
+          <ul className="flex flex-col gap-3 feed-3:hidden">
+            {items.map((video) => (
+              <VideoListCard
+                key={video.id}
+                video={video}
+                channelId={channelId}
+                selected={selected.includes(video.id)}
+                onToggleSelect={toggleSelect}
+                onRequestDelete={setPendingDelete}
+                onChanged={() => setSelected([])}
+              />
+            ))}
+          </ul>
+
+          {/*
+            ── Rendu DESKTOP : tableau complet, inchangé ─────────────────
+            `relative` est indispensable : les libellés `sr-only` du tableau
+            (la légende, le « Actions » de la dernière colonne) sont en
+            `position: absolute`. Sans ancêtre positionné, leur bloc conteneur
+            est le bloc initial — ils sortaient donc du conteneur à défilement
+            et allongeaient la page ENTIÈRE de plusieurs dizaines de pixels
+            entre 900 et 1088 px de large. `relative` les rattache au
+            conteneur, qui les rogne comme le reste du tableau.
+          */}
+          <div className="kt-scroll relative hidden overflow-x-auto rounded-kt border border-border feed-3:block">
+            <table className="w-full min-w-[68rem] border-collapse text-kt-base">
+              <caption className="sr-only">
+                Vidéos de la chaîne, avec leur visibilité et leurs statistiques
+              </caption>
+              <thead>
+                <tr className="border-b border-border bg-bg-elevated text-kt-sm text-fg-muted">
+                  <th scope="col" className="px-2 py-2">
+                    <Checkbox
+                      checked={allSelected}
+                      ref={(element) => {
+                        if (element) element.indeterminate = someSelected;
+                      }}
+                      onChange={(event) => toggleAll(event.target.checked)}
+                      aria-label="Sélectionner toutes les vidéos de la page"
+                    />
                   </th>
+                  {COLUMNS.map((column) => (
+                    <th
+                      key={column.key}
+                      scope="col"
+                      className={cn('px-2 py-2 font-medium', column.className)}
+                    >
+                      {column.label}
+                    </th>
+                  ))}
+                  <th scope="col" className="px-2 py-2">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((video) => (
+                  <VideoTableRow
+                    key={video.id}
+                    video={video}
+                    channelId={channelId}
+                    selected={selected.includes(video.id)}
+                    onToggleSelect={toggleSelect}
+                    onRequestDelete={setPendingDelete}
+                    onChanged={() => setSelected([])}
+                  />
                 ))}
-                <th scope="col" className="px-2 py-2">
-                  <span className="sr-only">Actions</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((video) => (
-                <VideoTableRow
-                  key={video.id}
-                  video={video}
-                  channelId={channelId}
-                  selected={selected.includes(video.id)}
-                  onToggleSelect={toggleSelect}
-                  onRequestDelete={setPendingDelete}
-                  onChanged={() => setSelected([])}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
 
       {/* ── Pagination ────────────────────────────────────────────────── */}
@@ -332,7 +410,7 @@ export function VideosScreen() {
             {rangeStart}–{rangeEnd} sur {total}
           </p>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-wrap items-center justify-between gap-3 feed-3:w-auto feed-3:justify-end">
             <Select
               label="Par page"
               selectSize="sm"
@@ -341,7 +419,10 @@ export function VideosScreen() {
               onChange={(event) =>
                 setQuery({ pageSize: event.target.value }, { resetPage: true })
               }
-              containerClassName="w-28 flex-row items-center gap-2"
+              className={MOBILE_CONTROL_HEIGHT}
+              // Plus large en mobile : le libellé « Par page » ne doit pas se
+              // couper en deux lignes à côté d'un contrôle de 44 px de haut.
+              containerClassName="w-40 flex-row items-center gap-2 feed-3:w-28"
             />
             <div className="flex items-center gap-1">
               <Button
@@ -349,6 +430,7 @@ export function VideosScreen() {
                 variant="ghost"
                 iconLeft={<ChevronLeft size={16} />}
                 disabled={page <= 1}
+                className={MOBILE_CONTROL_HEIGHT}
                 onClick={() => setQuery({ page: page - 1 })}
               >
                 Précédent
@@ -361,6 +443,7 @@ export function VideosScreen() {
                 variant="ghost"
                 iconRight={<ChevronRight size={16} />}
                 disabled={page >= totalPages}
+                className={MOBILE_CONTROL_HEIGHT}
                 onClick={() => setQuery({ page: page + 1 })}
               >
                 Suivant

@@ -52,6 +52,10 @@ export const Switch = forwardRef<HTMLButtonElement, SwitchProps>(function Switch
       }}
       className={cn(
         'relative inline-flex shrink-0 items-center rounded-pill transition-colors duration-150 kt-focus-ring',
+        // Ici la taille EST le style : un interrupteur de 44 px de haut ne
+        // ressemblerait plus à rien. On étend donc la zone sensible avec un
+        // pseudo-élément, la piste et le curseur gardent leurs dimensions.
+        'kt-tap-halo',
         small ? 'h-4 w-8' : 'h-5 w-10',
         checked ? 'bg-accent-fg' : 'bg-bg-active',
         disabled && 'cursor-not-allowed opacity-50',

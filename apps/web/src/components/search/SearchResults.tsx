@@ -181,7 +181,8 @@ export function SearchResults() {
   // ── Aucune requête saisie ────────────────────────────────────────────────
   if (!query) {
     return (
-      <div className="mx-auto w-full max-w-[1096px] px-4 py-8 feed-3:px-6">
+      // Le conteneur d'`AppShell` fournit déjà la gouttière : pas de double marge.
+      <div className="mx-auto w-full max-w-[1096px] py-4 feed-3:py-8">
         <EmptyState
           icon={<Search size={28} aria-hidden="true" />}
           title="Que souhaitez-vous regarder ?"
@@ -194,7 +195,8 @@ export function SearchResults() {
   const hasResults = videos.length > 0 || channels.length > 0 || playlists.length > 0;
 
   return (
-    <div className="mx-auto w-full max-w-[1096px] px-4 py-4 feed-3:px-6">
+    /* `AppShell` fournit déjà `px-4` : on n'ajoute qu'une largeur de lecture. */
+    <div className="mx-auto w-full max-w-[1096px]">
       <SearchFilters
         values={filters}
         onChange={handleFilterChange}

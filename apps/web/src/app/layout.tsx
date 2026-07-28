@@ -19,6 +19,12 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  /*
+   * `cover` étend la page sous l'encoche et la barre d'accueil iOS : c'est la
+   * condition pour que `env(safe-area-inset-*)` renvoie autre chose que 0 sur
+   * les surfaces plein écran (Shorts, lecteur, navigation basse).
+   */
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
