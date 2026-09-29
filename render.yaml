@@ -1,0 +1,51 @@
+# Blueprint Render — API Kelvyn Tube + worker + Postgres + Redis.
+# Le stockage S3 (Cloudflare R2…) et Meilisearch sont externes : renseigner les variables `sync: false`.
+databases:
+  - name: kelvyntube-db
+    plan: free
+    databaseName: kelvyntube
+    user: kelvyn
+
+services:
+  - type: keyvalue
+    name: kelvyntube-redis
+    plan: free
+    ipAllowList: []
+    maxmemoryPolicy: noeviction
+
+  - type: web
+    name: kelvyntube-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile.api
+    plan: starter
+    healthCheckPath: /api/v1/health
+    preDeployCommand: npm run push -w @kelvyntube/db
+    envVars: &common
+      - { key: NODE_ENV, value: production }
+      - { key: DATABASE_URL, fromDatabase: { name: kelvyntube-db, property: connectionString } }
+      - { key: REDIS_URL, fromService: { type: keyvalue, name: kelvyntube-redis, property: connectionString } }
+      - { key: JWT_ACCESS_SECRET, generateValue: true }
+      - { key: JWT_REFRESH_SECRET, generateValue: true }
+      - { key: IP_HASH_SALT, generateValue: true }
+      - { key: API_PORT, value: "10000" }
+      - { key: COOKIE_SECURE, value: "true" }
+      - { key: WEB_PUBLIC_URL, sync: false }
+      - { key: CORS_ORIGINS, sync: false }
+      - { key: API_PUBLIC_URL, sync: false }
+      - { key: COOKIE_DOMAIN, sync: false }
+      - { key: S3_ENDPOINT, sync: false }
+      - { key: S3_ACCESS_KEY_ID, sync: false }
+      - { key: S3_SECRET_ACCESS_KEY, sync: false }
+      - { key: S3_BUCKET, sync: false }
+      - { key: S3_FORCE_PATH_STYLE, value: "false" }
+      - { key: CDN_PUBLIC_URL, sync: false }
+      - { key: MEILI_HOST, sync: false }
+      - { key: MEILI_MASTER_KEY, sync: false }
+
+  - type: worker
+    name: kelvyntube-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile.api
+    dockerCommand: npm run start:worker -w @kelvyntube/api
+    plan: starter
+    envVars: *common

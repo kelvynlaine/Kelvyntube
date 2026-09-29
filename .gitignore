@@ -23,3 +23,5 @@ uploads/
 
 # Prisma
 packages/db/prisma/migrations/dev.db*
+.vercel
+.env*
